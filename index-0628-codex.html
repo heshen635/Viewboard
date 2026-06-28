@@ -1,0 +1,3065 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人项目进展看板</title>
+  <style>
+    :root {
+      --bg: #fff7d6;
+      --panel: #ffffff;
+      --text: #111111;
+      --muted: #4f4f4f;
+      --line: #111111;
+      --primary: #5b6cff;
+      --primary-dark: #4052ef;
+      --success: #18b875;
+      --warning: #ffb000;
+      --danger: #ff4d4d;
+      --accent: #ff7ac8;
+      --shadow: 8px 8px 0 #111111;
+      --shadow-small: 4px 4px 0 #111111;
+      --radius: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 16px 16px, rgba(17, 17, 17, 0.12) 2px, transparent 2px),
+        var(--bg);
+      background-size: 32px 32px;
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    .app-shell {
+      width: min(1780px, calc(100vw - 48px));
+      max-width: none;
+      margin: 0 auto;
+      padding: 18px 0 24px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 36px;
+      letter-spacing: -1px;
+      text-shadow: 3px 3px 0 var(--accent);
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 3px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .storage-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .payment-stats-grid {
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      margin-top: 18px;
+    }
+
+    .stat-card {
+      padding: 18px;
+      border-radius: var(--radius);
+      background: #ffffff;
+      border: 3px solid var(--line);
+      box-shadow: var(--shadow-small);
+      text-align: left;
+      width: 100%;
+    }
+
+    .stat-card:hover {
+      background: #f7f0ff;
+    }
+
+    .stat-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .stat-card .stat-action-text {
+      font-size: 22px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .content-grid:not(.payment-section) > .table-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .content-grid:not(.payment-section) > .table-panel .table-wrap {
+      flex: 1;
+      max-height: none;
+      min-height: 0;
+      height: 0;
+      overflow: auto;
+    }
+
+    .content-grid.payment-section > .table-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .content-grid.payment-section > .table-panel .table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      max-height: 680px;
+    }
+
+    .content-grid.project-form-collapsed,
+    .content-grid.payment-form-collapsed {
+      grid-template-columns: 74px minmax(0, 1fr);
+    }
+
+    .form-panel {
+      padding: 18px;
+      position: sticky;
+      top: 16px;
+    }
+
+    .content-grid.project-form-collapsed .form-panel,
+    .content-grid.payment-form-collapsed .form-panel {
+      width: 74px;
+      min-height: 74px;
+      padding: 0;
+      align-self: start;
+    }
+
+    .content-grid.project-form-collapsed .form-panel .section-title,
+    .content-grid.payment-form-collapsed .form-panel .section-title {
+      height: 68px;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .content-grid.project-form-collapsed .form-panel h2,
+    .content-grid.project-form-collapsed #resetProjectFormBtn,
+    .content-grid.project-form-collapsed .form-panel form,
+    .content-grid.project-form-collapsed .form-panel .notice,
+    .content-grid.payment-form-collapsed .form-panel h2,
+    .content-grid.payment-form-collapsed #resetPaymentFormBtn,
+    .content-grid.payment-form-collapsed .form-panel form,
+    .content-grid.payment-form-collapsed .form-panel .notice {
+      display: none !important;
+    }
+
+    .content-grid.project-form-collapsed #toggleProjectFormBtn,
+    .content-grid.payment-form-collapsed #togglePaymentFormBtn {
+      width: 58px;
+      height: 58px;
+      padding: 0;
+      line-height: 1.1;
+      white-space: normal;
+      background: var(--accent);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .title-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    .form-panel form.is-hidden + .notice,
+    #logForm.is-hidden {
+      display: none;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    #projectForm .form-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    #projectForm .form-grid > div:not(.field-full) {
+      grid-column: span 3;
+    }
+
+    .field-full {
+      grid-column: 1 / -1;
+    }
+
+    .project-meta-row {
+      display: grid;
+      grid-template-columns: 72px 88px minmax(0, 1fr);
+      gap: 12px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 3px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+      box-shadow: var(--shadow-small);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--line);
+      box-shadow: 2px 2px 0 #111111;
+      transform: translate(2px, 2px);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: 3px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      background: #ffffff;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 900;
+      box-shadow: var(--shadow-small);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 #111111;
+      background: #f5f5f5;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #111111;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: #111111;
+    }
+
+    .btn-purple {
+      background: #cbb7ff;
+      color: #111111;
+    }
+
+    .table-panel {
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px;
+      border-bottom: 3px solid var(--line);
+      background: #f7f0ff;
+    }
+
+    .table-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .project-table-header,
+    .payment-table-header {
+      display: grid;
+      grid-template-columns: 1fr auto auto 260px auto;
+      align-items: center;
+    }
+
+    .project-table-header .title-actions,
+    .payment-table-header .title-actions {
+      justify-content: center;
+    }
+
+    .project-table-header button,
+    .project-table-header select,
+    .payment-table-header button,
+    .payment-table-header select {
+      min-height: 44px;
+    }
+
+    .batch-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .batch-actions select {
+      width: auto;
+      min-width: 130px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 680px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1280px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .project-table {
+      table-layout: fixed;
+      min-width: 1180px;
+    }
+
+    .project-table th:nth-child(1),
+    .project-table td:nth-child(1) { width: 62px; }
+
+    .project-table th:nth-child(2),
+    .project-table td:nth-child(2) { width: 110px; }
+
+    .project-table th:nth-child(3),
+    .project-table td:nth-child(3) { width: 190px; }
+
+    .project-table th:nth-child(4),
+    .project-table td:nth-child(4) { width: 120px; }
+
+    .project-table th:nth-child(5),
+    .project-table td:nth-child(5) { width: 72px; }
+
+    .project-table th:nth-child(6),
+    .project-table td:nth-child(6) { width: 120px; }
+
+    .project-table th:nth-child(7),
+    .project-table td:nth-child(7) { width: 130px; }
+
+    .project-table th:nth-child(8),
+    .project-table td:nth-child(8) { width: 120px; }
+
+    .project-table th:nth-child(9),
+    .project-table td:nth-child(9) { width: 110px; }
+
+    .project-table th:nth-child(10),
+    .project-table td:nth-child(10) { width: 110px; }
+
+    th,
+    td {
+      padding: 12px;
+      border-right: 2px solid var(--line);
+      border-bottom: 2px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #b7f7d4;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .payment-section .table-wrap thead th {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background: #b7f7d4;
+      box-shadow: 0 2px 0 var(--line);
+    }
+
+    .th-has-filter {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+    }
+
+    .th-has-filter .th-label {
+      margin-right: 2px;
+    }
+
+    .th-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: #fff;
+      color: var(--text);
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      vertical-align: middle;
+      box-shadow: 1px 1px 0 #111111;
+    }
+
+    .th-filter-btn:hover {
+      background: #fff0f8;
+    }
+
+    .th-filter-btn.is-active {
+      background: #ffd76b;
+    }
+
+    .th-filter-menu {
+      position: fixed;
+      z-index: 200;
+      min-width: 140px;
+      max-width: 280px;
+      max-height: 280px;
+      overflow: auto;
+      padding: 4px;
+      background: #fff;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 4px 4px 0 #111111;
+    }
+
+    .th-filter-option {
+      display: block;
+      width: 100%;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .th-filter-option:hover {
+      background: #fff0f8;
+    }
+
+    .th-filter-option.is-selected {
+      background: #b7f7d4;
+      font-weight: 900;
+    }
+
+    tr:hover td {
+      background: #fff0f8;
+    }
+
+    .is-selected-row td {
+      background: #fff0f8;
+    }
+
+    .row-check {
+      width: auto;
+      box-shadow: none;
+      transform: none;
+      accent-color: var(--primary);
+      inline-size: 20px;
+      block-size: 20px;
+      cursor: pointer;
+    }
+
+    .daily-done-col {
+      width: 240px;
+      min-width: 240px;
+      max-width: 240px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.45;
+    }
+
+    .daily-done-text {
+      max-height: 86px;
+      overflow-y: auto;
+    }
+
+    .project-detail-row td {
+      background: #fffdf0;
+      padding: 14px;
+    }
+
+    .project-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .project-detail-block {
+      border: 2px solid var(--line);
+      background: #ffffff;
+      padding: 10px;
+      box-shadow: 3px 3px 0 #111111;
+      min-height: 72px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    .project-detail-block strong {
+      display: inline-block;
+      margin-bottom: 6px;
+      padding: 3px 6px;
+      font-size: 12px;
+    }
+
+    .next-action-title {
+      background: #ffd166;
+      border: 2px solid var(--line);
+      box-shadow: 2px 2px 0 #111111;
+    }
+
+    .blocker-title {
+      background: #ff8a8a;
+      border: 2px solid var(--line);
+      box-shadow: 2px 2px 0 #111111;
+    }
+
+    .daily-done-title {
+      background: #7ee0a1;
+      border: 2px solid var(--line);
+      box-shadow: 2px 2px 0 #111111;
+    }
+
+
+    .next-action-text {
+      display: block;
+      margin-top: 6px;
+      font-weight: 900;
+    }
+
+    .project-detail-text {
+      display: block;
+      margin-top: 6px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .cell-strong {
+      font-weight: 800;
+    }
+
+    .project-name-pill {
+      display: inline-block;
+      min-width: 100%;
+      padding: 8px 10px;
+      border: 3px solid var(--line);
+      box-shadow: 3px 3px 0 #111111;
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .project-name-pill:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #111111;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      background: #d8e0ff;
+      color: var(--text);
+      box-shadow: 2px 2px 0 #111111;
+    }
+
+    .tag.green {
+      background: #b7f7d4;
+      color: var(--text);
+    }
+
+    .tag.orange {
+      background: #ffd76b;
+      color: var(--text);
+    }
+
+    .tag.red {
+      background: #ff9aa2;
+      color: var(--text);
+    }
+
+    .tag.gray {
+      background: #d7d7d7;
+      color: var(--text);
+    }
+
+    .tag.tone-red {
+      background: #ff8a8a;
+      color: var(--text);
+    }
+
+    .tag.tone-orange {
+      background: #ffb45c;
+      color: var(--text);
+    }
+
+    .tag.tone-yellow {
+      background: #ffe66d;
+      color: var(--text);
+    }
+
+    .tag.tone-lime {
+      background: #c7f36b;
+      color: var(--text);
+    }
+
+    .tag.tone-green {
+      background: #7ee0a1;
+      color: var(--text);
+    }
+
+    .tag.owner-dev,
+    select.status-tone.owner-dev {
+      background: #ff8a8a;
+      color: var(--text);
+    }
+
+    .tag.owner-tech,
+    select.status-tone.owner-tech {
+      background: #8de4ff;
+      color: var(--text);
+    }
+
+    .tag.owner-supplier,
+    select.status-tone.owner-supplier {
+      background: #cbb7ff;
+      color: var(--text);
+    }
+
+    select.status-tone.tone-red {
+      background: #ff8a8a;
+    }
+
+    select.status-tone.tone-orange {
+      background: #ffb45c;
+    }
+
+    select.status-tone.tone-yellow {
+      background: #ffe66d;
+    }
+
+    select.status-tone.tone-lime {
+      background: #c7f36b;
+    }
+
+    select.status-tone.tone-green {
+      background: #7ee0a1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .logs-panel {
+      margin-top: 18px;
+      padding: 18px;
+    }
+
+    .payment-section {
+      margin-top: 18px;
+    }
+
+    .compare-panel {
+      margin: 18px 0;
+      padding: 18px;
+    }
+
+    .compare-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .compare-card {
+      border: 3px solid var(--line);
+      background: #ffffff;
+      padding: 12px;
+      box-shadow: var(--shadow-small);
+    }
+
+    .compare-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .compare-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .logs-layout {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .logs-layout.log-form-collapsed {
+      grid-template-columns: 74px minmax(0, 1fr);
+    }
+
+    .log-form-panel {
+      min-width: 0;
+    }
+
+    .logs-layout.log-form-collapsed .log-form-panel {
+      width: 74px;
+      min-height: 74px;
+      align-self: start;
+    }
+
+    .logs-layout.log-form-collapsed .log-form-panel .section-title {
+      height: 68px;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .logs-layout.log-form-collapsed .log-form-panel h2,
+    .logs-layout.log-form-collapsed #resetLogFormBtn,
+    .logs-layout.log-form-collapsed #logForm {
+      display: none !important;
+    }
+
+    .logs-layout.log-form-collapsed #toggleLogFormBtn {
+      width: 58px;
+      height: 58px;
+      padding: 0;
+      line-height: 1.1;
+      white-space: normal;
+      background: var(--accent);
+    }
+
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .notice {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 3px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff4b8;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: var(--shadow-small);
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .storage-panel,
+      .content-grid,
+      .logs-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .project-table-header,
+      .payment-table-header {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .form-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        padding: 14px;
+      }
+
+      .stats-grid,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .project-meta-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <h1>个人项目进展看板</h1>
+        <p>适合采购、资开、下单、付款等项目的离线跟进管理，数据仅保存在当前浏览器。</p>
+      </div>
+      <div class="storage-panel" aria-label="数据工具">
+        <button class="btn-primary" id="addProjectTopBtn">新增资开项目</button>
+        <button id="exportJsonBtn" class="btn-success">导出 JSON</button>
+        <button id="importJsonBtn">导入 JSON</button>
+        <input id="importJsonFile" type="file" accept="application/json,.json" hidden>
+        <button id="clearAllBtn" class="btn-danger">清空看板</button>
+      </div>
+    </header>
+
+    <section class="stats-grid" aria-label="项目统计">
+      <button class="stat-card" id="quickAllProjectsBtn" type="button"><span>资开项目总数</span><strong id="statTotal">0</strong></button>
+      <button class="stat-card" id="quickHighRiskBtn" type="button"><span>高风险总数</span><strong id="statHighRisk">0</strong></button>
+      <button class="stat-card" id="quickResourceDevBtn" type="button"><span>资源开发</span><strong id="statResourceDev">0</strong></button>
+      <button class="stat-card" id="quickNegotiationBtn" type="button"><span>议价总数</span><strong id="statNegotiation">0</strong></button>
+      <button class="stat-card" id="quickContractBtn" type="button"><span>合同签署</span><strong id="statContract">0</strong></button>
+    </section>
+
+    <section class="content-grid">
+      <aside class="panel form-panel">
+        <div class="section-title">
+          <h2 id="projectFormTitle">资开项目</h2>
+          <div class="title-actions">
+            <button id="toggleProjectFormBtn" type="button">隐藏</button>
+            <button id="resetProjectFormBtn" type="button">清空表单</button>
+          </div>
+        </div>
+        <form id="projectForm">
+          <input type="hidden" id="projectId">
+          <div class="form-grid">
+            <div>
+              <label for="projectNo">项目编号 *</label>
+              <input id="projectNo" required placeholder="例如：P-2026-001">
+            </div>
+            <div>
+              <label for="projectName">项目名称 *</label>
+              <input id="projectName" required placeholder="请输入项目名称">
+            </div>
+            <div>
+              <label for="projectType">项目类型</label>
+              <select id="projectType">
+                <option>固资&低耗</option>
+                <option>集采项目</option>
+                <option selected>服务项目</option>
+              </select>
+            </div>
+            <div>
+              <label for="projectStatus">当前状态</label>
+              <select id="projectStatus">
+                <option selected>资源开发</option>
+                <option>立项报价</option>
+                <option>议价</option>
+                <option>合同签署</option>
+                <option>已完成</option>
+              </select>
+            </div>
+            <div class="field-full">
+              <label for="blocker">当前卡点</label>
+              <textarea id="blocker" placeholder="例如：供应商报价未确认"></textarea>
+            </div>
+            <div class="field-full">
+              <label for="nextAction">下一步动作</label>
+              <textarea id="nextAction" placeholder="例如：明天跟进报价并同步采购经理"></textarea>
+            </div>
+            <div class="field-full">
+              <label for="dailyDone">当日已完成内容</label>
+              <textarea id="dailyDone" placeholder="例如：已完成供应商初筛、报价已收齐、资料已提交"></textarea>
+            </div>
+            <div class="field-full project-meta-row">
+              <div>
+                <label for="riskLevel">风险等级</label>
+                <select id="riskLevel">
+                  <option>低</option>
+                  <option selected>中</option>
+                  <option>高</option>
+                </select>
+              </div>
+              <div>
+                <label for="owner">责任方</label>
+                <select id="owner">
+                  <option selected>资开</option>
+                  <option>技术</option>
+                  <option>供应商</option>
+                </select>
+              </div>
+              <div>
+                <label for="supplier">供应商</label>
+                <input id="supplier" placeholder="供应商名称">
+              </div>
+            </div>
+            <input id="lastUpdated" type="hidden">
+            <div>
+              <label for="projectRequisitionNo">采购申请号</label>
+              <input id="projectRequisitionNo" placeholder="采购申请号">
+            </div>
+            <div>
+              <label for="srmProjectNo">SRM项目号</label>
+              <input id="srmProjectNo" placeholder="SRM项目号">
+            </div>
+          </div>
+          <div class="button-row">
+            <button type="button" id="exportProjectsCsvBtn" class="btn-success">导出资开 CSV</button>
+            <button type="submit" class="btn-primary">保存资开项目</button>
+          </div>
+        </form>
+      </aside>
+
+      <section class="panel table-panel">
+        <div class="table-header project-table-header">
+          <h2>资开项目列表</h2>
+          <div class="title-actions">
+            <button id="toggleAllProjectsBtn" type="button">全部选中</button>
+            <button id="editSelectedProjectBtn" type="button" class="btn-purple">编辑选中</button>
+            <button id="deleteSelectedProjectBtn" type="button" class="btn-danger">删除选中</button>
+          </div>
+          <div class="batch-actions">
+            <select id="projectBatchField" aria-label="资开项目批量修改字段">
+              <option value="">批量字段</option>
+              <option value="type">项目类型</option>
+              <option value="status">当前状态</option>
+              <option value="risk">风险等级</option>
+              <option value="owner">责任方</option>
+            </select>
+            <select id="projectBatchValue" aria-label="资开项目批量修改值">
+              <option value="">选择值</option>
+            </select>
+            <button id="saveProjectBatchBtn" type="button" class="btn-success">批量保存</button>
+          </div>
+          <select id="projectTypeListFilter" aria-label="按资开项目类型筛选">
+            <option value="">全部项目类型</option>
+            <option>固资&低耗</option>
+            <option>集采项目</option>
+            <option>服务项目</option>
+          </select>
+          <span class="muted" id="projectCountText">共 0 条</span>
+        </div>
+        <div class="table-wrap">
+          <table class="project-table">
+            <thead>
+              <tr>
+                <th>选择</th>
+                <th>编号</th>
+                <th>项目名称</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>风险</th>
+                <th>采购申请号</th>
+                <th>SRM项目号</th>
+                <th>供应商</th>
+                <th>责任方</th>
+              </tr>
+            </thead>
+            <tbody id="projectTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="stats-grid payment-stats-grid" aria-label="下单付款快捷筛选">
+      <button class="stat-card" id="quickUnshippedPaymentsBtn" type="button"><span>未发货数量</span><strong id="statUnshippedPayments">0</strong></button>
+      <button class="stat-card" id="quickCollectingDocsBtn" type="button"><span>资料收集中数量</span><strong id="statCollectingDocs">0</strong></button>
+      <button class="stat-card" id="quickUninitiatedPaymentsBtn" type="button"><span>未发起付款数量</span><strong id="statUninitiatedPayments">0</strong></button>
+      <button class="stat-card" id="resetPaymentQuickFilterBtn" type="button"><span>下单付款筛选</span><strong class="stat-action-text">重置</strong></button>
+    </section>
+
+    <section class="content-grid payment-section">
+      <aside class="panel form-panel">
+        <div class="section-title">
+          <h2 id="paymentFormTitle">下单付款</h2>
+          <div class="title-actions">
+            <button id="togglePaymentFormBtn" type="button">隐藏</button>
+            <button id="resetPaymentFormBtn" type="button">清空表单</button>
+          </div>
+        </div>
+        <form id="paymentForm">
+          <input type="hidden" id="paymentId">
+          <div class="form-grid">
+            <div>
+              <label for="paymentProjectNo">项目编号 *</label>
+              <input id="paymentProjectNo" required placeholder="例如：PO-2026-001">
+            </div>
+            <div>
+              <label for="paymentProjectName">项目名称 *</label>
+              <input id="paymentProjectName" required placeholder="请输入项目名称">
+            </div>
+            <div>
+              <label for="procurementType">采购类型</label>
+              <select id="procurementType">
+                <option selected>固资</option>
+                <option>低耗</option>
+                <option>服务</option>
+              </select>
+            </div>
+            <div>
+              <label for="requester">需求人</label>
+              <input id="requester" placeholder="需求人">
+            </div>
+            <div>
+              <label for="requisitionNo">采购申请号</label>
+              <input id="requisitionNo" placeholder="采购申请号">
+            </div>
+            <div>
+              <label for="poNo">PO号</label>
+              <input id="poNo" placeholder="PO号">
+            </div>
+            <div>
+              <label for="shipmentStatus">货物状态</label>
+              <select id="shipmentStatus">
+                <option selected>未发货</option>
+                <option>已发货</option>
+                <option>未收货</option>
+                <option>已收货</option>
+              </select>
+            </div>
+            <div class="field-full">
+              <label for="requisitionContent">采购申请内容</label>
+              <textarea id="requisitionContent" placeholder="填写采购申请内容"></textarea>
+            </div>
+            <div class="field-full">
+              <label for="paymentBlocker">卡点</label>
+              <textarea id="paymentBlocker" placeholder="例如：付款资料缺失、PO信息待确认"></textarea>
+            </div>
+            <div>
+              <label for="paymentDocs">付款资料</label>
+              <select id="paymentDocs">
+                <option>未开始</option>
+                <option selected>收集中</option>
+                <option>已收齐</option>
+              </select>
+            </div>
+            <div>
+              <label for="paymentInitiated">付款状态</label>
+              <select id="paymentInitiated">
+                <option selected>否</option>
+                <option>是</option>
+              </select>
+            </div>
+          </div>
+          <div class="button-row">
+            <button type="button" id="exportPaymentsCsvBtn" class="btn-success">导出下单付款 CSV</button>
+            <button type="submit" class="btn-primary">保存下单付款</button>
+          </div>
+        </form>
+      </aside>
+
+      <section class="panel table-panel">
+        <div class="table-header payment-table-header">
+          <h2>下单付款列表</h2>
+          <div class="title-actions">
+            <button id="toggleAllPaymentsBtn" type="button">全部选中</button>
+            <button id="editSelectedPaymentBtn" type="button" class="btn-purple">编辑选中</button>
+            <button id="deleteSelectedPaymentBtn" type="button" class="btn-danger">删除选中</button>
+          </div>
+          <div class="batch-actions">
+            <select id="paymentBatchField" aria-label="下单付款批量修改字段">
+              <option value="">批量字段</option>
+              <option value="procurementType">采购类型</option>
+              <option value="shipmentStatus">货物状态</option>
+              <option value="paymentDocs">付款资料</option>
+              <option value="paymentInitiated">付款状态</option>
+            </select>
+            <select id="paymentBatchValue" aria-label="下单付款批量修改值">
+              <option value="">选择值</option>
+            </select>
+            <button id="savePaymentBatchBtn" type="button" class="btn-success">批量保存</button>
+          </div>
+          <select id="paymentProjectFilter" aria-label="按项目筛选下单付款">
+            <option value="">全部项目</option>
+          </select>
+          <span class="muted" id="paymentCountText">共 0 条</span>
+        </div>
+        <div class="table-wrap">
+          <table class="payment-table">
+            <thead id="paymentTableHead"></thead>
+            <tbody id="paymentTableBody"></tbody>
+          </table>
+        </div>
+        <div id="paymentColumnFilterMenu" class="th-filter-menu" hidden></div>
+      </section>
+    </section>
+
+    <section class="panel logs-panel compare-panel" aria-label="每日进展对比结果">
+      <div class="section-title">
+        <h2>每日进展对比结果</h2>
+        <span class="muted" id="compareStatusText">请先导入基准 JSON，再导入今日 JSON。</span>
+      </div>
+      <div class="button-row">
+        <button id="importBaselineJsonBtn" type="button">导入基准 JSON</button>
+        <input id="baselineJsonFile" type="file" accept="application/json,.json" hidden>
+        <button id="importTodayJsonBtn" type="button" class="btn-success">导入今日 JSON 并对比</button>
+        <input id="todayJsonFile" type="file" accept="application/json,.json" hidden>
+      </div>
+      <div class="compare-list">
+        <div class="compare-card">
+          <h3>本次对比摘要</h3>
+          <ul id="compareSummaryList">
+            <li>暂无对比结果。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="logs-layout is-hidden" aria-hidden="true">
+        <div class="log-form-panel">
+          <div class="section-title">
+            <h2 id="logFormTitle">每日进展记录</h2>
+            <div class="title-actions">
+              <button id="toggleLogFormBtn" type="button">隐藏</button>
+              <button id="resetLogFormBtn" type="button">清空记录表单</button>
+            </div>
+          </div>
+        <form id="logForm">
+          <input type="hidden" id="logId">
+          <div class="form-grid">
+            <div>
+              <label for="logDate">日期 *</label>
+              <input id="logDate" type="date" required>
+            </div>
+            <div>
+              <label for="logProjectNo">项目编号 *</label>
+              <input id="logProjectNo" list="projectNoList" required placeholder="选择或输入项目编号">
+              <datalist id="projectNoList"></datalist>
+            </div>
+            <div class="field-full">
+              <label for="todayProgress">今日进展</label>
+              <textarea id="todayProgress" placeholder="今天完成了什么"></textarea>
+            </div>
+            <div class="field-full">
+              <label for="todayIssue">遇到问题</label>
+              <textarea id="todayIssue" placeholder="遇到的阻碍或风险"></textarea>
+            </div>
+            <div class="field-full">
+              <label for="logNextStep">下一步</label>
+              <textarea id="logNextStep" placeholder="下一步计划"></textarea>
+            </div>
+            <div class="field-full">
+              <label for="needFollow">是否需要跟进</label>
+              <select id="needFollow">
+                <option>否</option>
+                <option>是</option>
+              </select>
+            </div>
+          </div>
+          <div class="button-row">
+            <button type="submit" class="btn-primary">保存进展</button>
+            <button type="button" id="exportLogsCsvBtn" class="btn-success">导出进展 CSV</button>
+          </div>
+        </form>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-header">
+            <h2>进展记录列表</h2>
+            <span class="muted" id="logCountText">共 0 条</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>项目编号</th>
+                  <th>项目名称</th>
+                  <th>今日进展</th>
+                  <th>遇到问题</th>
+                  <th>下一步</th>
+                  <th>需跟进</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =============================
+    // 基础配置与状态
+    // =============================
+    const STORAGE_PREFIX = "personal-project-viewboard:";
+    const DEFAULT_BOARD_KEY = "default";
+
+    const state = {
+      boardKey: localStorage.getItem("personal-project-viewboard:lastBoard") || DEFAULT_BOARD_KEY,
+      compareBaseline: null,
+      compareSummary: null,
+      projectQuickFilter: { status: "", risk: "" },
+      paymentQuickFilter: { shipmentStatus: "", paymentDocs: "", paymentInitiated: "" },
+      paymentColumnFilters: {},
+      selectedProjectIds: [],
+      selectedPaymentIds: [],
+      data: {
+        projects: [],
+        purchasePayments: [],
+        progressHistory: [],
+        updateHistory: [],
+        logs: []
+      }
+    };
+
+    const els = {
+      exportJsonBtn: document.getElementById("exportJsonBtn"),
+      importJsonBtn: document.getElementById("importJsonBtn"),
+      importJsonFile: document.getElementById("importJsonFile"),
+      importBaselineJsonBtn: document.getElementById("importBaselineJsonBtn"),
+      baselineJsonFile: document.getElementById("baselineJsonFile"),
+      importTodayJsonBtn: document.getElementById("importTodayJsonBtn"),
+      todayJsonFile: document.getElementById("todayJsonFile"),
+      clearAllBtn: document.getElementById("clearAllBtn"),
+      compareStatusText: document.getElementById("compareStatusText"),
+      compareSummaryList: document.getElementById("compareSummaryList"),
+      addProjectTopBtn: document.getElementById("addProjectTopBtn"),
+      quickAllProjectsBtn: document.getElementById("quickAllProjectsBtn"),
+      quickHighRiskBtn: document.getElementById("quickHighRiskBtn"),
+      quickResourceDevBtn: document.getElementById("quickResourceDevBtn"),
+      quickNegotiationBtn: document.getElementById("quickNegotiationBtn"),
+      quickContractBtn: document.getElementById("quickContractBtn"),
+      projectForm: document.getElementById("projectForm"),
+      projectFormTitle: document.getElementById("projectFormTitle"),
+      toggleProjectFormBtn: document.getElementById("toggleProjectFormBtn"),
+      resetProjectFormBtn: document.getElementById("resetProjectFormBtn"),
+      projectTableBody: document.getElementById("projectTableBody"),
+      projectCountText: document.getElementById("projectCountText"),
+      projectTypeListFilter: document.getElementById("projectTypeListFilter"),
+      toggleAllProjectsBtn: document.getElementById("toggleAllProjectsBtn"),
+      editSelectedProjectBtn: document.getElementById("editSelectedProjectBtn"),
+      deleteSelectedProjectBtn: document.getElementById("deleteSelectedProjectBtn"),
+      projectBatchField: document.getElementById("projectBatchField"),
+      projectBatchValue: document.getElementById("projectBatchValue"),
+      saveProjectBatchBtn: document.getElementById("saveProjectBatchBtn"),
+      exportProjectsCsvBtn: document.getElementById("exportProjectsCsvBtn"),
+      paymentForm: document.getElementById("paymentForm"),
+      paymentFormTitle: document.getElementById("paymentFormTitle"),
+      quickUnshippedPaymentsBtn: document.getElementById("quickUnshippedPaymentsBtn"),
+      quickCollectingDocsBtn: document.getElementById("quickCollectingDocsBtn"),
+      quickUninitiatedPaymentsBtn: document.getElementById("quickUninitiatedPaymentsBtn"),
+      resetPaymentQuickFilterBtn: document.getElementById("resetPaymentQuickFilterBtn"),
+      togglePaymentFormBtn: document.getElementById("togglePaymentFormBtn"),
+      resetPaymentFormBtn: document.getElementById("resetPaymentFormBtn"),
+      paymentTableBody: document.getElementById("paymentTableBody"),
+      paymentCountText: document.getElementById("paymentCountText"),
+      paymentProjectFilter: document.getElementById("paymentProjectFilter"),
+      toggleAllPaymentsBtn: document.getElementById("toggleAllPaymentsBtn"),
+      editSelectedPaymentBtn: document.getElementById("editSelectedPaymentBtn"),
+      deleteSelectedPaymentBtn: document.getElementById("deleteSelectedPaymentBtn"),
+      paymentBatchField: document.getElementById("paymentBatchField"),
+      paymentBatchValue: document.getElementById("paymentBatchValue"),
+      savePaymentBatchBtn: document.getElementById("savePaymentBatchBtn"),
+      exportPaymentsCsvBtn: document.getElementById("exportPaymentsCsvBtn"),
+      logForm: document.getElementById("logForm"),
+      logFormTitle: document.getElementById("logFormTitle"),
+      toggleLogFormBtn: document.getElementById("toggleLogFormBtn"),
+      resetLogFormBtn: document.getElementById("resetLogFormBtn"),
+      logTableBody: document.getElementById("logTableBody"),
+      logCountText: document.getElementById("logCountText"),
+      exportLogsCsvBtn: document.getElementById("exportLogsCsvBtn"),
+      projectNoList: document.getElementById("projectNoList")
+    };
+
+    const PROJECT_BATCH_OPTIONS = {
+      type: { label: "项目类型", values: ["固资&低耗", "集采项目", "服务项目"] },
+      status: { label: "当前状态", values: ["资源开发", "立项报价", "议价", "合同签署", "已完成"] },
+      risk: { label: "风险等级", values: ["低", "中", "高"] },
+      owner: { label: "责任方", values: ["资开", "技术", "供应商"] }
+    };
+
+    const PAYMENT_TABLE_COLUMNS = [
+      { key: null, label: "选择", filterable: false },
+      { key: "projectNo", label: "采购申请号" },
+      { key: "projectName", label: "项目名称" },
+      { key: "procurementType", label: "采购类型" },
+      { key: "requester", label: "需求人" },
+      { key: "requisitionContent", label: "采购申请内容" },
+      { key: "poNo", label: "PO号" },
+      { key: "shipmentStatus", label: "货物状态", defaultValue: "未发货" },
+      { key: "paymentDocs", label: "付款资料", defaultValue: "收集中" },
+      { key: "paymentInitiated", label: "付款状态", defaultValue: "否" },
+      { key: "paymentBlocker", label: "卡点" }
+    ];
+
+    let openPaymentFilterField = null;
+
+    const PAYMENT_BATCH_OPTIONS = {
+      procurementType: { label: "采购类型", values: ["固资", "低耗", "服务"] },
+      shipmentStatus: { label: "货物状态", values: ["未发货", "已发货", "未收货", "已收货"] },
+      paymentDocs: { label: "付款资料", values: ["未开始", "收集中", "已收齐"] },
+      paymentInitiated: { label: "付款状态", values: ["否", "是"] }
+    };
+
+    const PAYMENT_FILTERABLE_COLUMNS = PAYMENT_TABLE_COLUMNS.filter(col => col.key && col.filterable !== false);
+    const TONE_SELECT_IDS = ["projectStatus", "riskLevel", "owner", "shipmentStatus", "paymentDocs", "paymentInitiated"];
+
+    function createEmptyData() {
+      return { projects: [], purchasePayments: [], progressHistory: [], updateHistory: [], logs: [] };
+    }
+
+    // =============================
+    // 工具函数
+    // =============================
+    function todayString() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function timestampForFilename() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+      return [
+        now.getFullYear(),
+        pad(now.getMonth() + 1),
+        pad(now.getDate())
+      ].join("") + "_" + [pad(now.getHours()), pad(now.getMinutes())].join("");
+    }
+
+    function safeFilenamePart(value) {
+      return String(value || DEFAULT_BOARD_KEY)
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, "_")
+        .replace(/\s+/g, "_")
+        .slice(0, 80) || DEFAULT_BOARD_KEY;
+    }
+
+    function createId() {
+      if (window.crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+    }
+
+    function getStorageKey() {
+      return STORAGE_PREFIX + state.boardKey;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function downloadFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveJsonFile(filename, content) {
+      const mimeType = "application/json;charset=utf-8";
+
+      // 浏览器不允许网页静默写入任意本地路径；支持时用保存对话框让用户选择目标文件夹。
+      if ("showSaveFilePicker" in window) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: "JSON 数据文件",
+              accept: { "application/json": [".json"] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(content);
+          await writable.close();
+          return;
+        } catch (error) {
+          if (error.name === "AbortError") return;
+        }
+      }
+
+      downloadFile(filename, content, mimeType);
+    }
+
+    function csvEscape(value) {
+      const text = String(value || "");
+      return '"' + text.replaceAll('"', '""') + '"';
+    }
+
+    function toCsv(headers, rows) {
+      const headerLine = headers.map(csvEscape).join(",");
+      const rowLines = rows.map(row => headers.map(header => csvEscape(row[header])).join(","));
+      return "\uFEFF" + [headerLine, ...rowLines].join("\n");
+    }
+
+    function statusTagClass(status) {
+      if (status === "资源开发") return "tone-red";
+      if (status === "立项报价") return "tone-orange";
+      if (status === "议价") return "tone-yellow";
+      if (status === "合同签署") return "tone-lime";
+      if (status === "已完成") return "tone-green";
+      return "";
+    }
+
+    function riskTagClass(risk) {
+      if (risk === "高") return "tone-red";
+      if (risk === "中") return "tone-yellow";
+      return "tone-green";
+    }
+
+    function shipmentTagClass(status) {
+      if (status === "未发货") return "tone-red";
+      if (status === "已发货") return "tone-orange";
+      if (status === "未收货") return "tone-yellow";
+      if (status === "已收货") return "tone-green";
+      return "tone-red";
+    }
+
+    function paymentDocsTagClass(status) {
+      if (status === "未开始") return "tone-red";
+      if (status === "收集中") return "tone-yellow";
+      if (status === "已收齐") return "tone-green";
+      return "tone-yellow";
+    }
+
+    function paymentInitiatedTagClass(status) {
+      return status === "是" ? "tone-green" : "tone-red";
+    }
+
+    function ownerTagClass(owner) {
+      if (owner === "资开") return "owner-dev";
+      if (owner === "技术") return "owner-tech";
+      if (owner === "供应商") return "owner-supplier";
+      return "owner-dev";
+    }
+
+    function projectNameStyle(project) {
+      if (project.risk === "低") return "background:#7ee0a1;";
+      if (project.risk === "中") return "background:#ffe66d;";
+      if (project.risk === "高") return "background:#ff8a8a;";
+      return "background:#ffd166;";
+    }
+
+    function selectToneClassFor(element) {
+      if (!element) return "";
+      if (element.id === "projectStatus") return statusTagClass(element.value);
+      if (element.id === "riskLevel") return riskTagClass(element.value);
+      if (element.id === "shipmentStatus") return shipmentTagClass(element.value);
+      if (element.id === "paymentDocs") return paymentDocsTagClass(element.value);
+      if (element.id === "paymentInitiated") return paymentInitiatedTagClass(element.value);
+      if (element.id === "owner") return ownerTagClass(element.value);
+      return "";
+    }
+
+    function refreshStatusSelectColors() {
+      TONE_SELECT_IDS.forEach(id => {
+        const element = document.getElementById(id);
+        if (!element) return;
+        element.classList.add("status-tone");
+        element.classList.remove("tone-red", "tone-orange", "tone-yellow", "tone-lime", "tone-green", "owner-dev", "owner-tech", "owner-supplier");
+        const toneClass = selectToneClassFor(element);
+        if (toneClass) element.classList.add(toneClass);
+      });
+    }
+
+    function normalizeBoardData(raw) {
+      const source = raw || {};
+      return {
+        projects: Array.isArray(source.projects) ? source.projects : [],
+        purchasePayments: Array.isArray(source.purchasePayments) ? source.purchasePayments : [],
+        progressHistory: Array.isArray(source.progressHistory) ? source.progressHistory : [],
+        updateHistory: Array.isArray(source.updateHistory) ? source.updateHistory : [],
+        logs: Array.isArray(source.logs) ? source.logs : []
+      };
+    }
+
+    function readJsonFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            resolve(JSON.parse(reader.result));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsText(file, "utf-8");
+      });
+    }
+
+    function mapBy(items, keyGetter) {
+      return new Map(items.filter(Boolean).map(item => [keyGetter(item), item]));
+    }
+
+    function updateSelection(selectedIds, id, checked) {
+      return checked
+        ? [...new Set([...selectedIds, id])]
+        : selectedIds.filter(itemId => itemId !== id);
+    }
+
+    function toggleVisibleSelection(selectedIds, visibleIds) {
+      if (visibleIds.length === 0) return selectedIds;
+      const visibleIdSet = new Set(visibleIds);
+      const allVisibleSelected = visibleIds.every(id => selectedIds.includes(id));
+      return allVisibleSelected
+        ? selectedIds.filter(id => !visibleIdSet.has(id))
+        : [...new Set([...selectedIds, ...visibleIds])];
+    }
+
+    function getSelectedItems(items, selectedIds) {
+      const selectedIdSet = new Set(selectedIds);
+      return items.filter(item => selectedIdSet.has(item.id));
+    }
+
+    function renderBatchValueOptions(selectEl, config) {
+      selectEl.innerHTML = config
+        ? [`<option value="">选择${config.label}</option>`, ...config.values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join("")
+        : `<option value="">选择值</option>`;
+    }
+
+    function formatChange(label, beforeValue, afterValue) {
+      const beforeText = beforeValue || "空";
+      const afterText = afterValue || "空";
+      if (beforeText === afterText) return "";
+      return `${label}：${beforeText} → ${afterText}`;
+    }
+
+    function compactChanges(changes) {
+      return changes.filter(Boolean).join("；");
+    }
+
+    function splitHiddenProgressText(text) {
+      return String(text || "")
+        .split("\n")
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    function getNewHiddenProgressLines(beforeProject, afterProject) {
+      const beforeLines = splitHiddenProgressText(beforeProject && beforeProject.hiddenProgressText);
+      const afterLines = splitHiddenProgressText(afterProject && afterProject.hiddenProgressText);
+      const beforeText = beforeLines.join("\n");
+      const afterText = afterLines.join("\n");
+
+      if (!afterLines.length || beforeText === afterText) return [];
+
+      // Most saves append to the end; keep duplicate historical lines if they were intentionally saved twice.
+      if (beforeLines.every((line, index) => afterLines[index] === line)) {
+        return afterLines.slice(beforeLines.length);
+      }
+
+      const beforeSet = new Set(beforeLines);
+      return afterLines.filter(line => !beforeSet.has(line));
+    }
+
+    function appendHiddenProjectProgress(project, beforeProject) {
+      const previousText = beforeProject ? beforeProject.hiddenProgressText || "" : "";
+      if (!project.dailyDone) {
+        project.hiddenProgressText = previousText;
+        return project;
+      }
+
+      const newLine = `${project.no}+${project.name}+${todayString()}+${project.dailyDone}`;
+      project.hiddenProgressText = previousText
+        ? `${previousText}\n${newLine}`
+        : newLine;
+      return project;
+    }
+
+    function collectFieldChanges(beforeItem, afterItem, fieldMap) {
+      return fieldMap
+        .map(field => {
+          const beforeValue = beforeItem ? String(beforeItem[field.key] || "") : "";
+          const afterValue = String(afterItem[field.key] || "");
+          if (beforeValue === afterValue) return null;
+          return {
+            field: field.key,
+            label: field.label,
+            before: beforeValue,
+            after: afterValue
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function createUpdateHistoryEntry({ entityType, entityKey, entityName, action, source, changes }) {
+      return {
+        id: createId(),
+        date: todayString(),
+        createdAt: new Date().toISOString(),
+        entityType,
+        entityKey,
+        entityName,
+        action,
+        source,
+        changes
+      };
+    }
+
+    function appendUpdateHistory(entry) {
+      if (!entry || !entry.changes || entry.changes.length === 0) return;
+      state.data.updateHistory.push(entry);
+    }
+
+    function buildProjectDoneText(beforeProject, afterProject) {
+      if (!beforeProject) return "新增资开项目";
+      const changes = [];
+
+      if (beforeProject.status !== "已完成" && afterProject.status === "已完成") {
+        changes.push("状态变为已完成");
+      }
+
+      changes.push(formatChange("状态", beforeProject.status, afterProject.status));
+      changes.push(formatChange("卡点", beforeProject.blocker, afterProject.blocker));
+      changes.push(formatChange("下一步", beforeProject.nextAction, afterProject.nextAction));
+      changes.push(formatChange("风险", beforeProject.risk, afterProject.risk));
+      changes.push(formatChange("最近更新", beforeProject.lastUpdated, afterProject.lastUpdated));
+
+      return compactChanges(changes);
+    }
+
+    function buildPaymentProgressText(beforePayment, afterPayment) {
+      if (!beforePayment) return "新增下单付款记录";
+      const changes = [];
+
+      if (beforePayment.paymentDocs !== "已收齐" && afterPayment.paymentDocs === "已收齐") {
+        changes.push("付款资料已收齐");
+      }
+      if (beforePayment.paymentInitiated !== "是" && afterPayment.paymentInitiated === "是") {
+        changes.push("付款状态已设为是");
+      }
+
+      changes.push(formatChange("采购类型", beforePayment.procurementType, afterPayment.procurementType));
+      changes.push(formatChange("需求人", beforePayment.requester, afterPayment.requester));
+      changes.push(formatChange("采购申请号", beforePayment.requisitionNo, afterPayment.requisitionNo));
+      changes.push(formatChange("采购申请内容", beforePayment.requisitionContent, afterPayment.requisitionContent));
+      changes.push(formatChange("卡点", beforePayment.paymentBlocker, afterPayment.paymentBlocker));
+      changes.push(formatChange("PO号", beforePayment.poNo, afterPayment.poNo));
+      changes.push(formatChange("货物状态", beforePayment.shipmentStatus, afterPayment.shipmentStatus));
+      changes.push(formatChange("付款资料", beforePayment.paymentDocs, afterPayment.paymentDocs));
+      changes.push(formatChange("付款状态", beforePayment.paymentInitiated, afterPayment.paymentInitiated));
+
+      return compactChanges(changes);
+    }
+
+    function compareBoardData(baselineData, todayData) {
+      const baselineProjects = mapBy(baselineData.projects, project => project.no);
+      const baselinePayments = mapBy(baselineData.purchasePayments, payment => payment.projectNo);
+      const projectFieldMap = [
+        { key: "status", label: "当前状态" },
+        { key: "blocker", label: "当前卡点" },
+        { key: "nextAction", label: "下一步动作" },
+        { key: "dailyDone", label: "当日已完成内容" },
+        { key: "owner", label: "责任方" },
+        { key: "supplier", label: "供应商" },
+        { key: "projectRequisitionNo", label: "采购申请号" },
+        { key: "srmProjectNo", label: "SRM项目号" },
+        { key: "lastUpdated", label: "最近更新日期" },
+        { key: "risk", label: "风险等级" }
+      ];
+      const paymentFieldMap = [
+        { key: "procurementType", label: "采购类型" },
+        { key: "requester", label: "需求人" },
+        { key: "requisitionNo", label: "采购申请号" },
+        { key: "requisitionContent", label: "采购申请内容" },
+        { key: "paymentBlocker", label: "卡点" },
+        { key: "poNo", label: "PO号" },
+        { key: "shipmentStatus", label: "货物状态" },
+        { key: "paymentDocs", label: "付款资料" },
+        { key: "paymentInitiated", label: "付款状态" },
+        { key: "dailyProgress", label: "当日进展" }
+      ];
+      const projectChanges = [];
+      const paymentChanges = [];
+      const paymentSummaries = [];
+      const newOrdersByProject = new Map();
+      const newPaymentsByProject = new Map();
+      const updateHistory = [];
+
+      const projects = todayData.projects.map(project => {
+        const beforeProject = baselineProjects.get(project.no);
+        const hiddenProgressLines = getNewHiddenProgressLines(beforeProject, project);
+        const dailyDone = buildProjectDoneText(beforeProject, project);
+        const progressText = hiddenProgressLines.length ? hiddenProgressLines.join("；") : dailyDone;
+        if (progressText) {
+          projectChanges.push(`资开项目：${project.no || "无编号"}｜${project.name || "无项目名称"}｜${project.status || "无状态"}｜${progressText}`);
+          updateHistory.push(createUpdateHistoryEntry({
+            entityType: "资开项目",
+            entityKey: project.no,
+            entityName: project.name,
+            action: beforeProject ? "json-compare-updated" : "json-compare-created",
+            source: "json-compare",
+            changes: collectFieldChanges(beforeProject, { ...project, dailyDone }, projectFieldMap)
+          }));
+        }
+        return { ...project, dailyDone };
+      });
+
+      const purchasePayments = todayData.purchasePayments.map(payment => {
+        const beforePayment = baselinePayments.get(payment.projectNo);
+        const dailyProgress = buildPaymentProgressText(beforePayment, payment);
+        if (dailyProgress) {
+          paymentChanges.push(`下单付款：${payment.projectNo || "无编号"}｜${payment.projectName || "无项目名称"}｜PO：${payment.poNo || "无"}｜货物状态：${payment.shipmentStatus || "未发货"}｜付款资料：${payment.paymentDocs || "无"}｜付款状态：${payment.paymentInitiated || "否"}`);
+          updateHistory.push(createUpdateHistoryEntry({
+            entityType: "下单付款",
+            entityKey: payment.projectNo,
+            entityName: payment.projectName,
+            action: beforePayment ? "json-compare-updated" : "json-compare-created",
+            source: "json-compare",
+            changes: collectFieldChanges(beforePayment, { ...payment, dailyProgress }, paymentFieldMap)
+          }));
+        }
+
+        if (!beforePayment) {
+          const key = payment.projectName || payment.projectNo || "未命名项目";
+          if (!newOrdersByProject.has(key)) newOrdersByProject.set(key, []);
+          newOrdersByProject.get(key).push(`${payment.projectName || "无项目名称"}+${payment.requester || "无需求人"}+${payment.requisitionContent || "无需求内容"}`);
+        }
+
+        if ((!beforePayment || beforePayment.paymentInitiated !== "是") && payment.paymentInitiated === "是") {
+          const key = payment.projectName || payment.projectNo || "未命名项目";
+          if (!newPaymentsByProject.has(key)) newPaymentsByProject.set(key, []);
+          newPaymentsByProject.get(key).push(`${payment.poNo || "无PO号"}`);
+        }
+        return { ...payment, dailyProgress };
+      });
+
+      newOrdersByProject.forEach((items, projectName) => {
+        paymentSummaries.push(`总结：下单付款部分，${projectName}新增${items.length}个下单，${items.join("；")}已完成下单。`);
+      });
+
+      newPaymentsByProject.forEach((items, projectName) => {
+        paymentSummaries.push(`总结：下单付款部分，${projectName}新增${items.length}个付款，${items.join("；")}。`);
+      });
+
+      const compareDate = todayString();
+      const historyEntry = {
+        id: createId(),
+        date: compareDate,
+        createdAt: new Date().toISOString(),
+        projectChanges,
+        paymentChanges,
+        paymentSummaries
+      };
+
+      return {
+        data: {
+          projects,
+          purchasePayments,
+          progressHistory: [...todayData.progressHistory, historyEntry],
+          updateHistory: [...todayData.updateHistory, ...updateHistory],
+          logs: todayData.logs
+        },
+        summary: historyEntry
+      };
+    }
+
+    // =============================
+    // 数据读写
+    // =============================
+    function loadData() {
+      const saved = localStorage.getItem(getStorageKey());
+      if (!saved) {
+        state.data = createEmptyData();
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        state.data = normalizeBoardData(parsed);
+      } catch (error) {
+        alert("当前看板数据无法解析，请导入备份 JSON 或切换其他看板标识。");
+        state.data = createEmptyData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(getStorageKey(), JSON.stringify(state.data));
+      localStorage.setItem("personal-project-viewboard:lastBoard", state.boardKey);
+    }
+
+    // =============================
+    // 渲染
+    // =============================
+    function renderStats() {
+      const projects = state.data.projects;
+      document.getElementById("statTotal").textContent = projects.length;
+      document.getElementById("statHighRisk").textContent = projects.filter(p => p.risk === "高").length;
+      document.getElementById("statResourceDev").textContent = projects.filter(p => p.status === "资源开发").length;
+      document.getElementById("statNegotiation").textContent = projects.filter(p => p.status === "议价").length;
+      document.getElementById("statContract").textContent = projects.filter(p => p.status === "合同签署").length;
+      const payments = state.data.purchasePayments;
+      document.getElementById("statUnshippedPayments").textContent = payments.filter(p => (p.shipmentStatus || "未发货") === "未发货").length;
+      document.getElementById("statCollectingDocs").textContent = payments.filter(p => (p.paymentDocs || "收集中") === "收集中").length;
+      document.getElementById("statUninitiatedPayments").textContent = payments.filter(p => (p.paymentInitiated || "否") === "否").length;
+    }
+
+    function applyProjectQuickFilter({ status = "", risk = "" } = {}) {
+      state.projectQuickFilter = { status, risk };
+      els.projectTypeListFilter.value = "";
+      renderProjects();
+    }
+
+    function applyPaymentQuickFilter({ shipmentStatus = "", paymentDocs = "", paymentInitiated = "" } = {}) {
+      state.paymentQuickFilter = { shipmentStatus, paymentDocs, paymentInitiated };
+      state.paymentColumnFilters = {};
+      els.paymentProjectFilter.value = "";
+      renderPayments();
+    }
+
+    function resetPaymentColumnFilters() {
+      state.paymentColumnFilters = {};
+      closePaymentColumnFilterMenu();
+    }
+
+    function getPaymentFieldValue(payment, field, defaultValue = "") {
+      if (field === "shipmentStatus") return payment.shipmentStatus || "未发货";
+      if (field === "paymentDocs") return payment.paymentDocs || "收集中";
+      if (field === "paymentInitiated") return payment.paymentInitiated || "否";
+      return payment[field] ?? defaultValue;
+    }
+
+    function getPaymentFieldDisplayValue(payment, field) {
+      const col = PAYMENT_TABLE_COLUMNS.find(item => item.key === field);
+      const raw = getPaymentFieldValue(payment, field, col?.defaultValue ?? "");
+      return raw ? String(raw) : "(空白)";
+    }
+
+    function getPaymentsScopedToProject() {
+      const selectedProject = els.paymentProjectFilter.value;
+      return state.data.purchasePayments.filter(payment =>
+        !selectedProject || getPaymentProjectKey(payment) === selectedProject
+      );
+    }
+
+    function getPaymentColumnFilterValues(field) {
+      const values = new Set();
+      getPaymentsScopedToProject().forEach(payment => {
+        values.add(getPaymentFieldDisplayValue(payment, field));
+      });
+      return [...values].sort((a, b) => String(a).localeCompare(String(b), "zh-CN"));
+    }
+
+    function getActivePaymentColumnFilterText() {
+      const labels = Object.entries(state.paymentColumnFilters)
+        .map(([field, value]) => {
+          const col = PAYMENT_TABLE_COLUMNS.find(item => item.key === field);
+          return col ? `${col.label}：${value}` : "";
+        })
+        .filter(Boolean);
+      return labels.join("；");
+    }
+
+    function renderPaymentTableHead() {
+      const thead = document.getElementById("paymentTableHead");
+      if (!thead) return;
+      thead.innerHTML = `<tr>${PAYMENT_TABLE_COLUMNS.map(col => {
+        if (!col.key || col.filterable === false) {
+          return `<th>${escapeHtml(col.label)}</th>`;
+        }
+        const activeFilter = state.paymentColumnFilters[col.key] || "";
+        const isActive = Boolean(activeFilter);
+        return `<th class="th-has-filter"><span class="th-label">${escapeHtml(col.label)}</span><button type="button" class="th-filter-btn${isActive ? " is-active" : ""}" data-payment-col="${col.key}" aria-label="筛选${escapeHtml(col.label)}" title="筛选">▾</button></th>`;
+      }).join("")}</tr>`;
+    }
+
+    function closePaymentColumnFilterMenu() {
+      const menu = document.getElementById("paymentColumnFilterMenu");
+      if (menu) menu.hidden = true;
+      openPaymentFilterField = null;
+    }
+
+    function openPaymentColumnFilter(field, anchorEl) {
+      closePaymentColumnFilterMenu();
+      const menu = document.getElementById("paymentColumnFilterMenu");
+      if (!menu) return;
+
+      const values = getPaymentColumnFilterValues(field);
+      const current = state.paymentColumnFilters[field] || "";
+      menu.innerHTML = [
+        `<button type="button" class="th-filter-option${!current ? " is-selected" : ""}" data-value="">(全部)</button>`,
+        ...values.map(value => `<button type="button" class="th-filter-option${current === value ? " is-selected" : ""}" data-value="${escapeHtml(value)}">${escapeHtml(value)}</button>`)
+      ].join("");
+
+      const rect = anchorEl.getBoundingClientRect();
+      menu.style.left = `${Math.max(8, rect.left)}px`;
+      menu.style.top = `${rect.bottom + 4}px`;
+      menu.hidden = false;
+      openPaymentFilterField = field;
+    }
+
+    function applyPaymentColumnFilter(field, value) {
+      if (!value) {
+        delete state.paymentColumnFilters[field];
+      } else {
+        state.paymentColumnFilters[field] = value;
+      }
+      closePaymentColumnFilterMenu();
+      renderPayments();
+    }
+
+    function getFilteredProjects() {
+      const listType = els.projectTypeListFilter.value;
+      const status = state.projectQuickFilter.status;
+      const risk = state.projectQuickFilter.risk;
+
+      return state.data.projects.filter(project => {
+        const matchesType = !listType || project.type === listType;
+        const matchesStatus = !status || project.status === status;
+        const matchesRisk = !risk || project.risk === risk;
+        return matchesType && matchesStatus && matchesRisk;
+      });
+    }
+
+    function renderProjectOptions() {
+      els.projectNoList.innerHTML = state.data.projects
+        .map(project => `<option value="${escapeHtml(project.no)}">${escapeHtml(project.name || "")}</option>`)
+        .join("");
+    }
+
+    function getPaymentProjectKey(payment) {
+      return payment.projectName || payment.projectNo || "未命名项目";
+    }
+
+    function renderPaymentProjectFilter() {
+      const selectedValue = els.paymentProjectFilter.value;
+      const projectKeys = [...new Set(state.data.purchasePayments.map(getPaymentProjectKey).filter(Boolean))]
+        .sort((a, b) => String(a).localeCompare(String(b), "zh-CN"));
+      els.paymentProjectFilter.innerHTML = [
+        `<option value="">全部项目</option>`,
+        ...projectKeys.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`)
+      ].join("");
+      els.paymentProjectFilter.value = projectKeys.includes(selectedValue) ? selectedValue : "";
+    }
+
+    function getFilteredPayments() {
+      const selectedProject = els.paymentProjectFilter.value;
+      const { shipmentStatus, paymentDocs, paymentInitiated } = state.paymentQuickFilter;
+      const columnFilters = state.paymentColumnFilters;
+      return state.data.purchasePayments.filter(payment => {
+        const matchesProject = !selectedProject || getPaymentProjectKey(payment) === selectedProject;
+        const matchesShipment = !shipmentStatus || getPaymentFieldValue(payment, "shipmentStatus") === shipmentStatus;
+        const matchesDocs = !paymentDocs || getPaymentFieldValue(payment, "paymentDocs") === paymentDocs;
+        const matchesInitiated = !paymentInitiated || getPaymentFieldValue(payment, "paymentInitiated") === paymentInitiated;
+        const matchesColumns = PAYMENT_FILTERABLE_COLUMNS.every(col => {
+          const filterVal = columnFilters[col.key];
+          if (!filterVal) return true;
+          return getPaymentFieldDisplayValue(payment, col.key) === filterVal;
+        });
+        return matchesProject && matchesShipment && matchesDocs && matchesInitiated && matchesColumns;
+      });
+    }
+
+    function renderProjects() {
+      const projects = getFilteredProjects();
+      els.projectCountText.textContent = `共 ${projects.length} 条`;
+      const areAllVisibleSelected = projects.length > 0 && projects.every(project => state.selectedProjectIds.includes(project.id));
+      els.toggleAllProjectsBtn.textContent = areAllVisibleSelected ? "取消全选" : "全部选中";
+
+      if (projects.length === 0) {
+        els.projectTableBody.innerHTML = `<tr><td colspan="10" class="empty-state">暂无项目，请新增或调整筛选条件。</td></tr>`;
+        return;
+      }
+
+      els.projectTableBody.innerHTML = projects.map(project => {
+        const isSelected = state.selectedProjectIds.includes(project.id);
+        return `
+        <tr class="${isSelected ? "is-selected-row" : ""}">
+          <td><input class="row-check" type="checkbox" ${isSelected ? "checked" : ""} onchange="selectProjectRow('${project.id}', this.checked)"></td>
+          <td class="cell-strong">${escapeHtml(project.no)}</td>
+          <td><button class="project-name-pill" type="button" style="${projectNameStyle(project)}" onclick="selectProjectByName('${project.id}')">${escapeHtml(project.name)}</button></td>
+          <td>${escapeHtml(project.type)}</td>
+          <td>${escapeHtml(project.status)}</td>
+          <td><span class="tag ${riskTagClass(project.risk)}">${escapeHtml(project.risk)}</span></td>
+          <td>${escapeHtml(project.projectRequisitionNo)}</td>
+          <td>${escapeHtml(project.srmProjectNo)}</td>
+          <td>${escapeHtml(project.supplier)}</td>
+          <td><span class="tag ${ownerTagClass(project.owner)}">${escapeHtml(project.owner || "资开")}</span></td>
+        </tr>
+        <tr class="project-detail-row ${isSelected ? "is-selected-row" : ""}">
+          <td colspan="10">
+            <div class="project-detail-grid">
+              <div class="project-detail-block"><strong class="blocker-title">当前卡点</strong><span class="project-detail-text">${escapeHtml(project.blocker)}</span></div>
+              <div class="project-detail-block"><strong class="next-action-title">下一步动作</strong><span class="project-detail-text next-action-text">${escapeHtml(project.nextAction)}</span></div>
+              <div class="project-detail-block"><strong class="daily-done-title">当日已完成内容</strong><span class="project-detail-text">${escapeHtml(project.dailyDone)}</span></div>
+            </div>
+          </td>
+        </tr>
+      `;
+      }).join("");
+    }
+
+    function renderPayments() {
+      closePaymentColumnFilterMenu();
+      renderPaymentTableHead();
+      const selectedProject = els.paymentProjectFilter.value;
+      const payments = getFilteredPayments();
+      const columnFilterText = getActivePaymentColumnFilterText();
+      const baseCountText = selectedProject
+        ? `共 ${payments.length} 条 / 全部 ${state.data.purchasePayments.length} 条`
+        : `共 ${payments.length} 条`;
+      els.paymentCountText.textContent = columnFilterText
+        ? `${baseCountText} / 列筛选：${columnFilterText}`
+        : baseCountText;
+      const areAllVisibleSelected = payments.length > 0 && payments.every(payment => state.selectedPaymentIds.includes(payment.id));
+      els.toggleAllPaymentsBtn.textContent = areAllVisibleSelected ? "取消全选" : "全部选中";
+
+      if (payments.length === 0) {
+        els.paymentTableBody.innerHTML = `<tr><td colspan="11" class="empty-state">暂无下单付款记录。</td></tr>`;
+        return;
+      }
+
+      els.paymentTableBody.innerHTML = payments.map(payment => {
+        const isSelected = state.selectedPaymentIds.includes(payment.id);
+        return `
+        <tr class="${isSelected ? "is-selected-row" : ""}">
+          <td><input class="row-check" type="checkbox" ${isSelected ? "checked" : ""} onchange="selectPaymentRow('${payment.id}', this.checked)"></td>
+          <td class="cell-strong">${escapeHtml(payment.projectNo)}</td>
+          <td>${escapeHtml(payment.projectName)}</td>
+          <td><span class="tag">${escapeHtml(payment.procurementType)}</span></td>
+          <td>${escapeHtml(payment.requester)}</td>
+          <td>${escapeHtml(payment.requisitionContent)}</td>
+          <td>${escapeHtml(payment.poNo)}</td>
+          <td><span class="tag ${shipmentTagClass(payment.shipmentStatus)}">${escapeHtml(payment.shipmentStatus || "未发货")}</span></td>
+          <td><span class="tag ${paymentDocsTagClass(payment.paymentDocs)}">${escapeHtml(payment.paymentDocs || "收集中")}</span></td>
+          <td><span class="tag ${paymentInitiatedTagClass(payment.paymentInitiated)}">${escapeHtml(payment.paymentInitiated || "否")}</span></td>
+          <td>${escapeHtml(payment.paymentBlocker)}</td>
+        </tr>
+      `;
+      }).join("");
+    }
+
+    function renderLogs() {
+      const projectsByNo = new Map(state.data.projects.map(project => [project.no, project.name]));
+      const logs = [...state.data.logs].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      els.logCountText.textContent = `共 ${logs.length} 条`;
+
+      if (logs.length === 0) {
+        els.logTableBody.innerHTML = `<tr><td colspan="8" class="empty-state">暂无每日进展记录。</td></tr>`;
+        return;
+      }
+
+      els.logTableBody.innerHTML = logs.map(log => `
+        <tr>
+          <td class="cell-strong">${escapeHtml(log.date)}</td>
+          <td>${escapeHtml(log.projectNo)}</td>
+          <td>${escapeHtml(projectsByNo.get(log.projectNo) || "")}</td>
+          <td>${escapeHtml(log.progress)}</td>
+          <td>${escapeHtml(log.issue)}</td>
+          <td>${escapeHtml(log.nextStep)}</td>
+          <td><span class="tag ${log.needFollow === "是" ? "red" : "gray"}">${escapeHtml(log.needFollow)}</span></td>
+          <td>
+            <div class="actions">
+              <button type="button" onclick="editLog('${log.id}')">编辑</button>
+              <button type="button" class="btn-danger" onclick="deleteLog('${log.id}')">删除</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderCompareProgress() {
+      const summary = state.compareSummary;
+      const summaryItems = summary
+        ? [...summary.projectChanges, ...summary.paymentChanges, ...(summary.paymentSummaries || [])]
+        : [];
+
+      els.compareStatusText.textContent = state.compareBaseline
+        ? "已导入基准 JSON，可以继续导入今日 JSON 进行对比。"
+        : "请先导入基准 JSON，再导入今日 JSON。";
+
+      els.compareSummaryList.innerHTML = summaryItems.length
+        ? summaryItems.slice(0, 12).map(item => `<li>${escapeHtml(item)}</li>`).join("")
+        : "<li>暂无对比结果。</li>";
+
+    }
+
+    function pruneSelections() {
+      const projectIds = new Set(state.data.projects.map(project => project.id));
+      const paymentIds = new Set(state.data.purchasePayments.map(payment => payment.id));
+      state.selectedProjectIds = state.selectedProjectIds.filter(id => projectIds.has(id));
+      state.selectedPaymentIds = state.selectedPaymentIds.filter(id => paymentIds.has(id));
+    }
+
+    function renderAll() {
+      pruneSelections();
+      renderStats();
+      renderProjectOptions();
+      renderProjects();
+      renderPaymentProjectFilter();
+      renderPayments();
+      renderLogs();
+      renderCompareProgress();
+      updateProjectBatchValueOptions();
+      updatePaymentBatchValueOptions();
+      refreshStatusSelectColors();
+      syncProjectTableHeight();
+    }
+
+    function syncProjectTableHeight() {
+      requestAnimationFrame(() => {
+        const projectArea = els.projectForm.closest(".content-grid");
+        if (!projectArea) return;
+        const tablePanel = projectArea.querySelector(".table-panel");
+        const formPanel = projectArea.querySelector(".form-panel");
+        if (!tablePanel || !formPanel) return;
+
+        if (projectArea.classList.contains("project-form-collapsed")) {
+          tablePanel.style.height = "";
+          return;
+        }
+
+        tablePanel.style.height = `${formPanel.offsetHeight}px`;
+      });
+    }
+
+    function setProjectFormHidden(isHidden) {
+      const projectArea = els.projectForm.closest(".content-grid");
+      if (projectArea) {
+        projectArea.classList.toggle("project-form-collapsed", isHidden);
+      }
+      els.projectForm.classList.toggle("is-hidden", isHidden);
+      els.toggleProjectFormBtn.textContent = isHidden ? "+资开" : "隐藏";
+      els.toggleProjectFormBtn.title = isHidden ? "展开资开项目表单" : "隐藏资开项目表单";
+      syncProjectTableHeight();
+    }
+
+    function setLogFormHidden(isHidden) {
+      const logArea = els.logForm.closest(".logs-layout");
+      if (logArea) {
+        logArea.classList.toggle("log-form-collapsed", isHidden);
+      }
+      els.logForm.classList.toggle("is-hidden", isHidden);
+      els.toggleLogFormBtn.textContent = isHidden ? "+进展" : "隐藏";
+      els.toggleLogFormBtn.title = isHidden ? "展开每日进展表单" : "隐藏每日进展表单";
+    }
+
+    function setPaymentFormHidden(isHidden) {
+      const paymentArea = els.paymentForm.closest(".content-grid");
+      if (paymentArea) {
+        paymentArea.classList.toggle("payment-form-collapsed", isHidden);
+      }
+      els.paymentForm.classList.toggle("is-hidden", isHidden);
+      els.togglePaymentFormBtn.textContent = isHidden ? "+付款" : "隐藏";
+      els.togglePaymentFormBtn.title = isHidden ? "展开下单付款表单" : "隐藏下单付款表单";
+    }
+
+    // =============================
+    // 项目表单逻辑
+    // =============================
+    function getProjectFormData() {
+      return {
+        id: document.getElementById("projectId").value || createId(),
+        no: document.getElementById("projectNo").value.trim(),
+        name: document.getElementById("projectName").value.trim(),
+        type: document.getElementById("projectType").value,
+        status: document.getElementById("projectStatus").value,
+        blocker: document.getElementById("blocker").value.trim(),
+        nextAction: document.getElementById("nextAction").value.trim(),
+        dailyDone: document.getElementById("dailyDone").value.trim(),
+        owner: document.getElementById("owner").value.trim(),
+        supplier: document.getElementById("supplier").value.trim(),
+        projectRequisitionNo: document.getElementById("projectRequisitionNo").value.trim(),
+        srmProjectNo: document.getElementById("srmProjectNo").value.trim(),
+        lastUpdated: todayString(),
+        risk: document.getElementById("riskLevel").value
+      };
+    }
+
+    function getProjectFieldMap() {
+      return [
+        { key: "no", label: "项目编号" },
+        { key: "name", label: "项目名称" },
+        { key: "type", label: "项目类型" },
+        { key: "status", label: "当前状态" },
+        { key: "blocker", label: "当前卡点" },
+        { key: "nextAction", label: "下一步动作" },
+        { key: "dailyDone", label: "当日已完成内容" },
+        { key: "owner", label: "责任方" },
+        { key: "supplier", label: "供应商" },
+        { key: "projectRequisitionNo", label: "采购申请号" },
+        { key: "srmProjectNo", label: "SRM项目号" },
+        { key: "lastUpdated", label: "最近更新日期" },
+        { key: "risk", label: "风险等级" },
+        { key: "hiddenProgressText", label: "隐藏进展文本" }
+      ];
+    }
+
+    function resetProjectForm() {
+      setProjectFormHidden(false);
+      els.projectForm.reset();
+      document.getElementById("projectId").value = "";
+      document.getElementById("projectType").value = "服务项目";
+      document.getElementById("projectStatus").value = "资源开发";
+      document.getElementById("owner").value = "资开";
+      document.getElementById("riskLevel").value = "中";
+      document.getElementById("lastUpdated").value = todayString();
+      els.projectFormTitle.textContent = "资开项目";
+      refreshStatusSelectColors();
+    }
+
+    function fillProjectForm(project) {
+      setProjectFormHidden(false);
+      document.getElementById("projectId").value = project.id;
+      document.getElementById("projectNo").value = project.no || "";
+      document.getElementById("projectName").value = project.name || "";
+      document.getElementById("projectType").value = project.type || "服务项目";
+      document.getElementById("projectStatus").value = project.status || "资源开发";
+      document.getElementById("blocker").value = project.blocker || "";
+      document.getElementById("nextAction").value = project.nextAction || "";
+      document.getElementById("dailyDone").value = project.dailyDone || "";
+      document.getElementById("owner").value = ["资开", "技术", "供应商"].includes(project.owner) ? project.owner : "资开";
+      document.getElementById("supplier").value = project.supplier || "";
+      document.getElementById("projectRequisitionNo").value = project.projectRequisitionNo || "";
+      document.getElementById("srmProjectNo").value = project.srmProjectNo || "";
+      document.getElementById("lastUpdated").value = project.lastUpdated || todayString();
+      document.getElementById("riskLevel").value = project.risk || "中";
+      els.projectFormTitle.textContent = "编辑资开项目";
+      refreshStatusSelectColors();
+    }
+
+    window.editProject = function(id) {
+      const project = state.data.projects.find(item => item.id === id);
+      if (project) fillProjectForm(project);
+    };
+
+    window.selectProjectRow = function(id, checked) {
+      state.selectedProjectIds = updateSelection(state.selectedProjectIds, id, checked);
+      renderProjects();
+      if (state.selectedProjectIds.length === 1) {
+        const project = state.data.projects.find(item => item.id === state.selectedProjectIds[0]);
+        if (project) fillProjectForm(project);
+      }
+    };
+
+    window.selectProjectByName = function(id) {
+      const project = state.data.projects.find(item => item.id === id);
+      if (!project) return;
+      state.selectedProjectIds = [id];
+      renderProjects();
+      fillProjectForm(project);
+    };
+
+    function toggleAllVisibleProjects() {
+      state.selectedProjectIds = toggleVisibleSelection(
+        state.selectedProjectIds,
+        getFilteredProjects().map(project => project.id)
+      );
+      renderProjects();
+    }
+
+    function getSelectedProjects() {
+      return getSelectedItems(state.data.projects, state.selectedProjectIds);
+    }
+
+    function editSelectedProject() {
+      const selectedProjects = getSelectedProjects();
+      if (selectedProjects.length === 0) {
+        alert("请先勾选一个资开项目。");
+        return;
+      }
+      if (selectedProjects.length > 1) {
+        alert("已选择多条资开项目，请使用右侧批量字段和值进行批量保存。单条编辑只支持选择 1 条。");
+        return;
+      }
+      window.editProject(selectedProjects[0].id);
+    }
+
+    function deleteSelectedProject() {
+      const selectedProjects = getSelectedProjects();
+      if (selectedProjects.length === 0) {
+        alert("请先勾选需要删除的资开项目。");
+        return;
+      }
+      if (!confirm(`确定删除选中的 ${selectedProjects.length} 个资开项目？此操作无法撤销，建议先导出 JSON 备份。`)) return;
+      selectedProjects.forEach(project => {
+        appendUpdateHistory(createUpdateHistoryEntry({
+          entityType: "资开项目",
+          entityKey: project.no,
+          entityName: project.name,
+          action: "manual-deleted",
+          source: "manual-batch-delete",
+          changes: [{ field: "record", label: "记录", before: "存在", after: "已删除" }]
+        }));
+      });
+      const selectedIds = new Set(state.selectedProjectIds);
+      state.data.projects = state.data.projects.filter(item => !selectedIds.has(item.id));
+      state.selectedProjectIds = [];
+      saveData();
+      renderAll();
+    }
+
+    function updateProjectBatchValueOptions() {
+      renderBatchValueOptions(els.projectBatchValue, PROJECT_BATCH_OPTIONS[els.projectBatchField.value]);
+    }
+
+    function saveProjectBatch() {
+      const selectedProjects = getSelectedProjects();
+      const field = els.projectBatchField.value;
+      const value = els.projectBatchValue.value;
+      const config = PROJECT_BATCH_OPTIONS[field];
+      if (selectedProjects.length === 0) {
+        alert("请先勾选需要批量修改的资开项目。");
+        return;
+      }
+      if (!config || !value) {
+        alert("请选择要批量修改的字段和值。");
+        return;
+      }
+
+      let updatedCount = 0;
+      state.data.projects = state.data.projects.map(project => {
+        if (!state.selectedProjectIds.includes(project.id) || project[field] === value) return project;
+        const updatedProject = { ...project, [field]: value, lastUpdated: todayString() };
+        const changes = collectFieldChanges(project, updatedProject, getProjectFieldMap());
+        appendUpdateHistory(createUpdateHistoryEntry({
+          entityType: "资开项目",
+          entityKey: project.no,
+          entityName: project.name,
+          action: "manual-batch-updated",
+          source: "manual-batch-save",
+          changes
+        }));
+        updatedCount += 1;
+        return updatedProject;
+      });
+
+      saveData();
+      renderAll();
+      alert(`已批量保存 ${updatedCount} 个资开项目的${config.label}。`);
+    }
+
+    window.deleteProject = function(id) {
+      const project = state.data.projects.find(item => item.id === id);
+      if (!project) return;
+      const relatedLogs = state.data.logs.filter(log => log.projectNo === project.no).length;
+      const message = relatedLogs
+        ? `确定删除资开项目 ${project.no}？相关 ${relatedLogs} 条进展记录不会自动删除。`
+        : `确定删除资开项目 ${project.no}？`;
+      if (!confirm(message)) return;
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "资开项目",
+        entityKey: project.no,
+        entityName: project.name,
+        action: "manual-deleted",
+        source: "manual-delete",
+        changes: [{ field: "record", label: "记录", before: "存在", after: "已删除" }]
+      }));
+      state.data.projects = state.data.projects.filter(item => item.id !== id);
+      state.selectedProjectIds = state.selectedProjectIds.filter(itemId => itemId !== id);
+      saveData();
+      renderAll();
+    };
+
+    // =============================
+    // 下单付款表单逻辑
+    // =============================
+    function getPaymentFormData() {
+      return {
+        id: document.getElementById("paymentId").value || createId(),
+        projectNo: document.getElementById("paymentProjectNo").value.trim(),
+        projectName: document.getElementById("paymentProjectName").value.trim(),
+        procurementType: document.getElementById("procurementType").value.trim(),
+        requester: document.getElementById("requester").value.trim(),
+        requisitionNo: document.getElementById("requisitionNo").value.trim(),
+        requisitionContent: document.getElementById("requisitionContent").value.trim(),
+        paymentBlocker: document.getElementById("paymentBlocker").value.trim(),
+        poNo: document.getElementById("poNo").value.trim(),
+        shipmentStatus: document.getElementById("shipmentStatus").value,
+        paymentDocs: document.getElementById("paymentDocs").value,
+        paymentInitiated: document.getElementById("paymentInitiated").value
+      };
+    }
+
+    function getPaymentFieldMap() {
+      return [
+        { key: "projectNo", label: "项目编号" },
+        { key: "projectName", label: "项目名称" },
+        { key: "procurementType", label: "采购类型" },
+        { key: "requester", label: "需求人" },
+        { key: "requisitionNo", label: "采购申请号" },
+        { key: "requisitionContent", label: "采购申请内容" },
+        { key: "paymentBlocker", label: "卡点" },
+        { key: "poNo", label: "PO号" },
+        { key: "shipmentStatus", label: "货物状态" },
+        { key: "paymentDocs", label: "付款资料" },
+        { key: "paymentInitiated", label: "付款状态" },
+        { key: "dailyProgress", label: "当日进展" }
+      ];
+    }
+
+    function resetPaymentForm() {
+      setPaymentFormHidden(false);
+      els.paymentForm.reset();
+      document.getElementById("paymentId").value = "";
+      document.getElementById("procurementType").value = "固资";
+      document.getElementById("shipmentStatus").value = "未发货";
+      document.getElementById("paymentDocs").value = "收集中";
+      document.getElementById("paymentInitiated").value = "否";
+      els.paymentFormTitle.textContent = "下单付款";
+      refreshStatusSelectColors();
+    }
+
+    function fillPaymentForm(payment) {
+      setPaymentFormHidden(false);
+      document.getElementById("paymentId").value = payment.id;
+      document.getElementById("paymentProjectNo").value = payment.projectNo || "";
+      document.getElementById("paymentProjectName").value = payment.projectName || "";
+      document.getElementById("procurementType").value = ["固资", "低耗", "服务"].includes(payment.procurementType) ? payment.procurementType : "固资";
+      document.getElementById("requester").value = payment.requester || "";
+      document.getElementById("requisitionNo").value = payment.requisitionNo || "";
+      document.getElementById("requisitionContent").value = payment.requisitionContent || "";
+      document.getElementById("paymentBlocker").value = payment.paymentBlocker || "";
+      document.getElementById("poNo").value = payment.poNo || "";
+      document.getElementById("shipmentStatus").value = ["未发货", "已发货", "未收货", "已收货"].includes(payment.shipmentStatus) ? payment.shipmentStatus : "未发货";
+      document.getElementById("paymentDocs").value = payment.paymentDocs || "收集中";
+      document.getElementById("paymentInitiated").value = payment.paymentInitiated || "否";
+      els.paymentFormTitle.textContent = "编辑下单付款";
+      refreshStatusSelectColors();
+    }
+
+    window.editPayment = function(id) {
+      const payment = state.data.purchasePayments.find(item => item.id === id);
+      if (payment) fillPaymentForm(payment);
+    };
+
+    window.selectPaymentRow = function(id, checked) {
+      state.selectedPaymentIds = updateSelection(state.selectedPaymentIds, id, checked);
+      renderPayments();
+      if (state.selectedPaymentIds.length === 1) {
+        const payment = state.data.purchasePayments.find(item => item.id === state.selectedPaymentIds[0]);
+        if (payment) fillPaymentForm(payment);
+      }
+    };
+
+    function toggleAllVisiblePayments() {
+      state.selectedPaymentIds = toggleVisibleSelection(
+        state.selectedPaymentIds,
+        getFilteredPayments().map(payment => payment.id)
+      );
+      renderPayments();
+    }
+
+    function getSelectedPayments() {
+      return getSelectedItems(state.data.purchasePayments, state.selectedPaymentIds);
+    }
+
+    function editSelectedPayment() {
+      const selectedPayments = getSelectedPayments();
+      if (selectedPayments.length === 0) {
+        alert("请先勾选一条下单付款记录。");
+        return;
+      }
+      if (selectedPayments.length > 1) {
+        alert("已选择多条下单付款记录，请使用右侧批量字段和值进行批量保存。单条编辑只支持选择 1 条。");
+        return;
+      }
+      window.editPayment(selectedPayments[0].id);
+    }
+
+    function deleteSelectedPayment() {
+      const selectedPayments = getSelectedPayments();
+      if (selectedPayments.length === 0) {
+        alert("请先勾选需要删除的下单付款记录。");
+        return;
+      }
+      if (!confirm(`确定删除选中的 ${selectedPayments.length} 条下单付款记录？此操作无法撤销，建议先导出 JSON 备份。`)) return;
+      selectedPayments.forEach(payment => {
+        appendUpdateHistory(createUpdateHistoryEntry({
+          entityType: "下单付款",
+          entityKey: payment.projectNo,
+          entityName: payment.projectName,
+          action: "manual-deleted",
+          source: "manual-batch-delete",
+          changes: [{ field: "record", label: "记录", before: "存在", after: "已删除" }]
+        }));
+      });
+      const selectedIds = new Set(state.selectedPaymentIds);
+      state.data.purchasePayments = state.data.purchasePayments.filter(item => !selectedIds.has(item.id));
+      state.selectedPaymentIds = [];
+      saveData();
+      renderAll();
+    };
+
+    function updatePaymentBatchValueOptions() {
+      renderBatchValueOptions(els.paymentBatchValue, PAYMENT_BATCH_OPTIONS[els.paymentBatchField.value]);
+    }
+
+    function savePaymentBatch() {
+      const selectedPayments = getSelectedPayments();
+      const field = els.paymentBatchField.value;
+      const value = els.paymentBatchValue.value;
+      const config = PAYMENT_BATCH_OPTIONS[field];
+      if (selectedPayments.length === 0) {
+        alert("请先勾选需要批量修改的下单付款记录。");
+        return;
+      }
+      if (!config || !value) {
+        alert("请选择要批量修改的字段和值。");
+        return;
+      }
+
+      let updatedCount = 0;
+      state.data.purchasePayments = state.data.purchasePayments.map(payment => {
+        if (!state.selectedPaymentIds.includes(payment.id) || payment[field] === value) return payment;
+        const updatedPayment = { ...payment, [field]: value };
+        const changes = collectFieldChanges(payment, updatedPayment, getPaymentFieldMap());
+        appendUpdateHistory(createUpdateHistoryEntry({
+          entityType: "下单付款",
+          entityKey: payment.projectNo,
+          entityName: payment.projectName,
+          action: "manual-batch-updated",
+          source: "manual-batch-save",
+          changes
+        }));
+        updatedCount += 1;
+        return updatedPayment;
+      });
+
+      saveData();
+      renderAll();
+      alert(`已批量保存 ${updatedCount} 条下单付款记录的${config.label}。`);
+    }
+
+    window.deletePayment = function(id) {
+      const payment = state.data.purchasePayments.find(item => item.id === id);
+      if (!payment) return;
+      if (!confirm(`确定删除下单付款记录 ${payment.projectNo}？`)) return;
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "下单付款",
+        entityKey: payment.projectNo,
+        entityName: payment.projectName,
+        action: "manual-deleted",
+        source: "manual-delete",
+        changes: [{ field: "record", label: "记录", before: "存在", after: "已删除" }]
+      }));
+      state.data.purchasePayments = state.data.purchasePayments.filter(item => item.id !== id);
+      state.selectedPaymentIds = state.selectedPaymentIds.filter(itemId => itemId !== id);
+      saveData();
+      renderAll();
+    };
+
+    // =============================
+    // 每日进展表单逻辑
+    // =============================
+    function getLogFormData() {
+      return {
+        id: document.getElementById("logId").value || createId(),
+        date: document.getElementById("logDate").value,
+        projectNo: document.getElementById("logProjectNo").value.trim(),
+        progress: document.getElementById("todayProgress").value.trim(),
+        issue: document.getElementById("todayIssue").value.trim(),
+        nextStep: document.getElementById("logNextStep").value.trim(),
+        needFollow: document.getElementById("needFollow").value
+      };
+    }
+
+    function resetLogForm() {
+      setLogFormHidden(false);
+      els.logForm.reset();
+      document.getElementById("logId").value = "";
+      document.getElementById("logDate").value = todayString();
+      els.logFormTitle.textContent = "每日进展记录";
+    }
+
+    function fillLogForm(log) {
+      setLogFormHidden(false);
+      document.getElementById("logId").value = log.id;
+      document.getElementById("logDate").value = log.date || todayString();
+      document.getElementById("logProjectNo").value = log.projectNo || "";
+      document.getElementById("todayProgress").value = log.progress || "";
+      document.getElementById("todayIssue").value = log.issue || "";
+      document.getElementById("logNextStep").value = log.nextStep || "";
+      document.getElementById("needFollow").value = log.needFollow || "否";
+      els.logFormTitle.textContent = "编辑进展记录";
+    }
+
+    window.editLog = function(id) {
+      const log = state.data.logs.find(item => item.id === id);
+      if (log) fillLogForm(log);
+    };
+
+    window.deleteLog = function(id) {
+      if (!confirm("确定删除这条每日进展记录？")) return;
+      state.data.logs = state.data.logs.filter(item => item.id !== id);
+      saveData();
+      renderAll();
+    };
+
+    // =============================
+    // 导入导出
+    // =============================
+    async function exportJson() {
+      const exportAddress = state.boardKey;
+      const payload = {
+        app: "personal-project-viewboard",
+        version: 1,
+        boardKey: state.boardKey,
+        exportAddress,
+        exportedAt: new Date().toISOString(),
+        projects: state.data.projects,
+        purchasePayments: state.data.purchasePayments,
+        progressHistory: state.data.progressHistory,
+        updateHistory: state.data.updateHistory,
+        logs: state.data.logs
+      };
+      const filename = `项目进展看板-${safeFilenamePart(exportAddress)}-${timestampForFilename()}.json`;
+      await saveJsonFile(filename, JSON.stringify(payload, null, 2));
+    }
+
+    function importJsonFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const imported = {
+            projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+            purchasePayments: Array.isArray(parsed.purchasePayments) ? parsed.purchasePayments : [],
+            progressHistory: Array.isArray(parsed.progressHistory) ? parsed.progressHistory : [],
+            updateHistory: Array.isArray(parsed.updateHistory) ? parsed.updateHistory : [],
+            logs: Array.isArray(parsed.logs) ? parsed.logs : []
+          };
+
+          if (!confirm(`即将用导入数据覆盖当前看板：${imported.projects.length} 个资开项目，${imported.purchasePayments.length} 条下单付款，${imported.logs.length} 条进展。是否继续？`)) {
+            return;
+          }
+
+          state.data = imported;
+          saveData();
+          renderAll();
+          alert("导入完成。");
+        } catch (error) {
+          alert("导入失败，请确认文件是有效 JSON。");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    async function importBaselineJsonFile(file) {
+      try {
+        const parsed = await readJsonFile(file);
+        state.compareBaseline = normalizeBoardData(parsed);
+        state.compareSummary = null;
+        renderCompareProgress();
+        alert(`基准 JSON 已导入：${state.compareBaseline.projects.length} 个资开项目，${state.compareBaseline.purchasePayments.length} 条下单付款。`);
+      } catch (error) {
+        alert("基准 JSON 导入失败，请确认文件格式正确。");
+      }
+    }
+
+    async function importTodayJsonAndCompare(file) {
+      if (!state.compareBaseline) {
+        alert("请先导入第一份基准 JSON。");
+        return;
+      }
+
+      try {
+        const parsed = await readJsonFile(file);
+        const todayData = normalizeBoardData(parsed);
+        const result = compareBoardData(state.compareBaseline, todayData);
+        state.data = result.data;
+        state.compareSummary = result.summary;
+        saveData();
+        renderAll();
+        alert(`对比完成：资开 ${result.summary.projectChanges.length} 条进展，下单付款 ${result.summary.paymentChanges.length} 条进展。`);
+      } catch (error) {
+        alert("今日 JSON 导入或对比失败，请确认文件格式正确。");
+      }
+    }
+
+    function exportProjectsCsv() {
+      const headers = ["项目编号", "项目名称", "项目类型", "当前状态", "当前卡点", "下一步动作", "当日已完成内容", "责任方", "供应商", "采购申请号", "SRM项目号", "最近更新日期", "风险等级"];
+      const rows = state.data.projects.map(project => ({
+        "项目编号": project.no,
+        "项目名称": project.name,
+        "项目类型": project.type,
+        "当前状态": project.status,
+        "当前卡点": project.blocker,
+        "下一步动作": project.nextAction,
+        "当日已完成内容": project.dailyDone,
+        "责任方": project.owner,
+        "供应商": project.supplier,
+        "采购申请号": project.projectRequisitionNo,
+        "SRM项目号": project.srmProjectNo,
+        "最近更新日期": project.lastUpdated,
+        "风险等级": project.risk
+      }));
+      downloadFile(`资开项目列表-${state.boardKey}.csv`, toCsv(headers, rows), "text/csv;charset=utf-8");
+    }
+
+    function exportPaymentsCsv() {
+      const headers = ["采购申请号", "项目名称", "采购类型", "需求人", "采购申请内容", "PO号", "货物状态", "付款资料", "付款状态", "卡点"];
+      const rows = state.data.purchasePayments.map(payment => ({
+        "采购申请号": payment.projectNo,
+        "项目名称": payment.projectName,
+        "采购类型": payment.procurementType,
+        "需求人": payment.requester,
+        "采购申请内容": payment.requisitionContent,
+        "PO号": payment.poNo,
+        "货物状态": payment.shipmentStatus || "未发货",
+        "付款资料": payment.paymentDocs,
+        "付款状态": payment.paymentInitiated,
+        "卡点": payment.paymentBlocker
+      }));
+      downloadFile(`下单付款列表-${state.boardKey}.csv`, toCsv(headers, rows), "text/csv;charset=utf-8");
+    }
+
+    function exportLogsCsv() {
+      const headers = ["日期", "项目编号", "项目名称", "今日进展", "遇到问题", "下一步", "是否需要跟进"];
+      const projectsByNo = new Map(state.data.projects.map(project => [project.no, project.name]));
+      const rows = state.data.logs.map(log => ({
+        "日期": log.date,
+        "项目编号": log.projectNo,
+        "项目名称": projectsByNo.get(log.projectNo) || "",
+        "今日进展": log.progress,
+        "遇到问题": log.issue,
+        "下一步": log.nextStep,
+        "是否需要跟进": log.needFollow
+      }));
+      downloadFile(`每日进展-${state.boardKey}.csv`, toCsv(headers, rows), "text/csv;charset=utf-8");
+    }
+
+    function bindFileImport(buttonEl, inputEl, handler) {
+      buttonEl.addEventListener("click", () => inputEl.click());
+      inputEl.addEventListener("change", event => {
+        const file = event.target.files[0];
+        if (file) handler(file);
+        event.target.value = "";
+      });
+    }
+
+    function bindFormToggle(buttonEl, formEl, setHidden) {
+      buttonEl.addEventListener("click", () => {
+        setHidden(!formEl.classList.contains("is-hidden"));
+      });
+    }
+
+    // =============================
+    // 事件绑定
+    // =============================
+    els.exportJsonBtn.addEventListener("click", exportJson);
+    bindFileImport(els.importJsonBtn, els.importJsonFile, importJsonFile);
+    bindFileImport(els.importBaselineJsonBtn, els.baselineJsonFile, importBaselineJsonFile);
+    bindFileImport(els.importTodayJsonBtn, els.todayJsonFile, importTodayJsonAndCompare);
+
+    els.clearAllBtn.addEventListener("click", () => {
+      if (!confirm("确定清空当前看板的全部资开项目、下单付款和进展记录？此操作无法撤销，建议先导出 JSON 备份。")) return;
+      state.data = createEmptyData();
+      state.compareBaseline = null;
+      state.compareSummary = null;
+      saveData();
+      resetProjectForm();
+      resetPaymentForm();
+      resetLogForm();
+      renderAll();
+    });
+
+    els.quickAllProjectsBtn.addEventListener("click", () => applyProjectQuickFilter());
+    els.quickHighRiskBtn.addEventListener("click", () => applyProjectQuickFilter({ risk: "高" }));
+    els.quickResourceDevBtn.addEventListener("click", () => applyProjectQuickFilter({ status: "资源开发" }));
+    els.quickNegotiationBtn.addEventListener("click", () => applyProjectQuickFilter({ status: "议价" }));
+    els.quickContractBtn.addEventListener("click", () => applyProjectQuickFilter({ status: "合同签署" }));
+
+    els.addProjectTopBtn.addEventListener("click", () => {
+      setProjectFormHidden(false);
+      resetProjectForm();
+      document.getElementById("projectNo").focus();
+    });
+
+    bindFormToggle(els.toggleProjectFormBtn, els.projectForm, setProjectFormHidden);
+    bindFormToggle(els.togglePaymentFormBtn, els.paymentForm, setPaymentFormHidden);
+    bindFormToggle(els.toggleLogFormBtn, els.logForm, setLogFormHidden);
+
+    els.resetProjectFormBtn.addEventListener("click", resetProjectForm);
+    els.projectTypeListFilter.addEventListener("change", renderProjects);
+    els.toggleAllProjectsBtn.addEventListener("click", toggleAllVisibleProjects);
+    els.editSelectedProjectBtn.addEventListener("click", editSelectedProject);
+    els.deleteSelectedProjectBtn.addEventListener("click", deleteSelectedProject);
+    els.projectBatchField.addEventListener("change", updateProjectBatchValueOptions);
+    els.saveProjectBatchBtn.addEventListener("click", saveProjectBatch);
+    els.resetPaymentFormBtn.addEventListener("click", resetPaymentForm);
+    els.resetLogFormBtn.addEventListener("click", resetLogForm);
+    els.exportProjectsCsvBtn.addEventListener("click", exportProjectsCsv);
+    els.paymentProjectFilter.addEventListener("change", () => {
+      state.paymentQuickFilter = { shipmentStatus: "", paymentDocs: "", paymentInitiated: "" };
+      resetPaymentColumnFilters();
+      renderPayments();
+    });
+    els.quickUnshippedPaymentsBtn.addEventListener("click", () => applyPaymentQuickFilter({ shipmentStatus: "未发货" }));
+    els.quickCollectingDocsBtn.addEventListener("click", () => applyPaymentQuickFilter({ paymentDocs: "收集中" }));
+    els.quickUninitiatedPaymentsBtn.addEventListener("click", () => applyPaymentQuickFilter({ paymentInitiated: "否" }));
+    els.resetPaymentQuickFilterBtn.addEventListener("click", () => applyPaymentQuickFilter());
+    els.toggleAllPaymentsBtn.addEventListener("click", toggleAllVisiblePayments);
+    els.editSelectedPaymentBtn.addEventListener("click", editSelectedPayment);
+    els.deleteSelectedPaymentBtn.addEventListener("click", deleteSelectedPayment);
+    els.paymentBatchField.addEventListener("change", updatePaymentBatchValueOptions);
+    els.savePaymentBatchBtn.addEventListener("click", savePaymentBatch);
+    els.exportPaymentsCsvBtn.addEventListener("click", exportPaymentsCsv);
+    els.exportLogsCsvBtn.addEventListener("click", exportLogsCsv);
+    window.addEventListener("resize", syncProjectTableHeight);
+
+    document.addEventListener("click", event => {
+      const filterBtn = event.target.closest(".th-filter-btn");
+      if (filterBtn?.dataset.paymentCol) {
+        event.stopPropagation();
+        const field = filterBtn.dataset.paymentCol;
+        const menu = document.getElementById("paymentColumnFilterMenu");
+        if (openPaymentFilterField === field && menu && !menu.hidden) {
+          closePaymentColumnFilterMenu();
+        } else {
+          openPaymentColumnFilter(field, filterBtn);
+        }
+        return;
+      }
+
+      const option = event.target.closest(".th-filter-option");
+      if (option && openPaymentFilterField) {
+        event.stopPropagation();
+        applyPaymentColumnFilter(openPaymentFilterField, option.dataset.value);
+        return;
+      }
+
+      if (!event.target.closest(".th-filter-menu") && !event.target.closest(".th-filter-btn")) {
+        closePaymentColumnFilterMenu();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closePaymentColumnFilterMenu();
+    });
+
+    TONE_SELECT_IDS.forEach(id => {
+      document.getElementById(id).addEventListener("change", refreshStatusSelectColors);
+    });
+
+    els.projectForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const project = getProjectFormData();
+      if (!project.no || !project.name) {
+        alert("请填写项目编号和项目名称。");
+        return;
+      }
+
+      const duplicate = state.data.projects.find(item => item.no === project.no && item.id !== project.id);
+      if (duplicate) {
+        alert("资开项目编号已存在，请使用唯一编号。");
+        return;
+      }
+
+      const index = state.data.projects.findIndex(item => item.id === project.id);
+      const beforeProject = index >= 0 ? state.data.projects[index] : null;
+      appendHiddenProjectProgress(project, beforeProject);
+      const projectChanges = collectFieldChanges(beforeProject, project, getProjectFieldMap());
+      if (index >= 0) {
+        state.data.projects[index] = project;
+      } else {
+        state.data.projects.unshift(project);
+      }
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "资开项目",
+        entityKey: project.no,
+        entityName: project.name,
+        action: beforeProject ? "manual-updated" : "manual-created",
+        source: "manual-save",
+        changes: projectChanges
+      }));
+
+      saveData();
+      resetProjectForm();
+      renderAll();
+    });
+
+    els.paymentForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const payment = getPaymentFormData();
+      if (!payment.projectNo || !payment.projectName) {
+        alert("请填写下单付款的项目编号和项目名称。");
+        return;
+      }
+
+      const duplicate = state.data.purchasePayments.find(item => item.projectNo === payment.projectNo && item.id !== payment.id);
+      if (duplicate) {
+        alert("下单付款项目编号已存在，请使用唯一编号。");
+        return;
+      }
+
+      const index = state.data.purchasePayments.findIndex(item => item.id === payment.id);
+      const beforePayment = index >= 0 ? state.data.purchasePayments[index] : null;
+      const paymentChanges = collectFieldChanges(beforePayment, payment, getPaymentFieldMap());
+      if (index >= 0) {
+        state.data.purchasePayments[index] = payment;
+      } else {
+        state.data.purchasePayments.unshift(payment);
+      }
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "下单付款",
+        entityKey: payment.projectNo,
+        entityName: payment.projectName,
+        action: beforePayment ? "manual-updated" : "manual-created",
+        source: "manual-save",
+        changes: paymentChanges
+      }));
+
+      saveData();
+      resetPaymentForm();
+      renderAll();
+    });
+
+    els.logForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const log = getLogFormData();
+      if (!log.date || !log.projectNo) {
+        alert("请填写日期和项目编号。");
+        return;
+      }
+
+      const index = state.data.logs.findIndex(item => item.id === log.id);
+      if (index >= 0) {
+        state.data.logs[index] = log;
+      } else {
+        state.data.logs.unshift(log);
+      }
+
+      // 保存进展时自动同步项目最近更新日期，并可带入下一步动作。
+      const relatedProject = state.data.projects.find(project => project.no === log.projectNo);
+      if (relatedProject) {
+        relatedProject.lastUpdated = log.date;
+        if (log.nextStep) relatedProject.nextAction = log.nextStep;
+      }
+
+      saveData();
+      resetLogForm();
+      renderAll();
+    });
+
+    // =============================
+    // 初始化
+    // =============================
+    loadData();
+    resetProjectForm();
+    resetPaymentForm();
+    resetLogForm();
+    renderAll();
+  </script>
+</body>
+</html>
