@@ -2286,6 +2286,23 @@
       };
     }
 
+    function getProjectFormBatchUpdateFields() {
+      const formProject = getProjectFormData();
+      return {
+        type: formProject.type,
+        status: formProject.status,
+        blocker: formProject.blocker,
+        nextAction: formProject.nextAction,
+        dailyDone: formProject.dailyDone,
+        owner: formProject.owner,
+        supplier: formProject.supplier,
+        projectRequisitionNo: formProject.projectRequisitionNo,
+        srmProjectNo: formProject.srmProjectNo,
+        lastUpdated: todayString(),
+        risk: formProject.risk
+      };
+    }
+
     function getProjectFieldMap() {
       return [
         { key: "no", label: "项目编号" },
@@ -2449,6 +2466,73 @@
       alert(`已批量保存 ${updatedCount} 个资开项目的${config.label}。`);
     }
 
+    function saveProjectFromForm() {
+      const selectedIds = [...state.selectedProjectIds];
+
+      if (selectedIds.length > 1) {
+        const batchFields = getProjectFormBatchUpdateFields();
+        let updatedCount = 0;
+        state.data.projects = state.data.projects.map(project => {
+          if (!selectedIds.includes(project.id)) return project;
+          const updatedProject = { ...project, ...batchFields };
+          appendHiddenProjectProgress(updatedProject, project);
+          const changes = collectFieldChanges(project, updatedProject, getProjectFieldMap());
+          if (changes.length === 0) return project;
+          appendUpdateHistory(createUpdateHistoryEntry({
+            entityType: "资开项目",
+            entityKey: project.no,
+            entityName: project.name,
+            action: "manual-batch-updated",
+            source: "manual-save",
+            changes
+          }));
+          updatedCount += 1;
+          return updatedProject;
+        });
+        state.selectedProjectIds = [];
+        saveData();
+        resetProjectForm();
+        renderAll();
+        alert(updatedCount > 0 ? `已保存 ${updatedCount} 个资开项目。` : "所选资开项目没有可保存的修改。");
+        return;
+      }
+
+      const project = getProjectFormData();
+      if (!project.no || !project.name) {
+        alert("请填写项目编号和项目名称。");
+        return;
+      }
+
+      const duplicate = state.data.projects.find(item => item.no === project.no && item.id !== project.id);
+      if (duplicate) {
+        alert("资开项目编号已存在，请使用唯一编号。");
+        return;
+      }
+
+      const index = state.data.projects.findIndex(item => item.id === project.id);
+      const beforeProject = index >= 0 ? state.data.projects[index] : null;
+      appendHiddenProjectProgress(project, beforeProject);
+      const projectChanges = collectFieldChanges(beforeProject, project, getProjectFieldMap());
+      if (index >= 0) {
+        state.data.projects[index] = project;
+      } else {
+        state.data.projects.unshift(project);
+      }
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "资开项目",
+        entityKey: project.no,
+        entityName: project.name,
+        action: beforeProject ? "manual-updated" : "manual-created",
+        source: "manual-save",
+        changes: projectChanges
+      }));
+
+      state.selectedProjectIds = [];
+      saveData();
+      resetProjectForm();
+      renderAll();
+    }
+
     window.deleteProject = function(id) {
       const project = state.data.projects.find(item => item.id === id);
       if (!project) return;
@@ -2488,6 +2572,21 @@
         shipmentStatus: document.getElementById("shipmentStatus").value,
         paymentDocs: document.getElementById("paymentDocs").value,
         paymentInitiated: document.getElementById("paymentInitiated").value
+      };
+    }
+
+    function getPaymentFormBatchUpdateFields() {
+      const formPayment = getPaymentFormData();
+      return {
+        procurementType: formPayment.procurementType,
+        requester: formPayment.requester,
+        requisitionNo: formPayment.requisitionNo,
+        requisitionContent: formPayment.requisitionContent,
+        paymentBlocker: formPayment.paymentBlocker,
+        poNo: formPayment.poNo,
+        shipmentStatus: formPayment.shipmentStatus,
+        paymentDocs: formPayment.paymentDocs,
+        paymentInitiated: formPayment.paymentInitiated
       };
     }
 
@@ -2639,6 +2738,71 @@
       saveData();
       renderAll();
       alert(`已批量保存 ${updatedCount} 条下单付款记录的${config.label}。`);
+    }
+
+    function savePaymentFromForm() {
+      const selectedIds = [...state.selectedPaymentIds];
+
+      if (selectedIds.length > 1) {
+        const batchFields = getPaymentFormBatchUpdateFields();
+        let updatedCount = 0;
+        state.data.purchasePayments = state.data.purchasePayments.map(payment => {
+          if (!selectedIds.includes(payment.id)) return payment;
+          const updatedPayment = { ...payment, ...batchFields };
+          const changes = collectFieldChanges(payment, updatedPayment, getPaymentFieldMap());
+          if (changes.length === 0) return payment;
+          appendUpdateHistory(createUpdateHistoryEntry({
+            entityType: "下单付款",
+            entityKey: payment.projectNo,
+            entityName: payment.projectName,
+            action: "manual-batch-updated",
+            source: "manual-save",
+            changes
+          }));
+          updatedCount += 1;
+          return updatedPayment;
+        });
+        state.selectedPaymentIds = [];
+        saveData();
+        resetPaymentForm();
+        renderAll();
+        alert(updatedCount > 0 ? `已保存 ${updatedCount} 条下单付款记录。` : "所选下单付款记录没有可保存的修改。");
+        return;
+      }
+
+      const payment = getPaymentFormData();
+      if (!payment.projectNo || !payment.projectName) {
+        alert("请填写下单付款的项目编号和项目名称。");
+        return;
+      }
+
+      const duplicate = state.data.purchasePayments.find(item => item.projectNo === payment.projectNo && item.id !== payment.id);
+      if (duplicate) {
+        alert("下单付款项目编号已存在，请使用唯一编号。");
+        return;
+      }
+
+      const index = state.data.purchasePayments.findIndex(item => item.id === payment.id);
+      const beforePayment = index >= 0 ? state.data.purchasePayments[index] : null;
+      const paymentChanges = collectFieldChanges(beforePayment, payment, getPaymentFieldMap());
+      if (index >= 0) {
+        state.data.purchasePayments[index] = payment;
+      } else {
+        state.data.purchasePayments.unshift(payment);
+      }
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "下单付款",
+        entityKey: payment.projectNo,
+        entityName: payment.projectName,
+        action: beforePayment ? "manual-updated" : "manual-created",
+        source: "manual-save",
+        changes: paymentChanges
+      }));
+
+      state.selectedPaymentIds = [];
+      saveData();
+      resetPaymentForm();
+      renderAll();
     }
 
     window.deletePayment = function(id) {
@@ -2954,75 +3118,12 @@
 
     els.projectForm.addEventListener("submit", event => {
       event.preventDefault();
-      const project = getProjectFormData();
-      if (!project.no || !project.name) {
-        alert("请填写项目编号和项目名称。");
-        return;
-      }
-
-      const duplicate = state.data.projects.find(item => item.no === project.no && item.id !== project.id);
-      if (duplicate) {
-        alert("资开项目编号已存在，请使用唯一编号。");
-        return;
-      }
-
-      const index = state.data.projects.findIndex(item => item.id === project.id);
-      const beforeProject = index >= 0 ? state.data.projects[index] : null;
-      appendHiddenProjectProgress(project, beforeProject);
-      const projectChanges = collectFieldChanges(beforeProject, project, getProjectFieldMap());
-      if (index >= 0) {
-        state.data.projects[index] = project;
-      } else {
-        state.data.projects.unshift(project);
-      }
-      appendUpdateHistory(createUpdateHistoryEntry({
-        entityType: "资开项目",
-        entityKey: project.no,
-        entityName: project.name,
-        action: beforeProject ? "manual-updated" : "manual-created",
-        source: "manual-save",
-        changes: projectChanges
-      }));
-
-      saveData();
-      resetProjectForm();
-      renderAll();
+      saveProjectFromForm();
     });
 
     els.paymentForm.addEventListener("submit", event => {
       event.preventDefault();
-      const payment = getPaymentFormData();
-      if (!payment.projectNo || !payment.projectName) {
-        alert("请填写下单付款的项目编号和项目名称。");
-        return;
-      }
-
-      const duplicate = state.data.purchasePayments.find(item => item.projectNo === payment.projectNo && item.id !== payment.id);
-      if (duplicate) {
-        alert("下单付款项目编号已存在，请使用唯一编号。");
-        return;
-      }
-
-      const index = state.data.purchasePayments.findIndex(item => item.id === payment.id);
-      const beforePayment = index >= 0 ? state.data.purchasePayments[index] : null;
-      const paymentChanges = collectFieldChanges(beforePayment, payment, getPaymentFieldMap());
-      if (index >= 0) {
-        state.data.purchasePayments[index] = payment;
-      } else {
-        state.data.purchasePayments.unshift(payment);
-      }
-      appendUpdateHistory(createUpdateHistoryEntry({
-        entityType: "下单付款",
-        entityKey: payment.projectNo,
-        entityName: payment.projectName,
-        action: beforePayment ? "manual-updated" : "manual-created",
-        source: "manual-save",
-        changes: paymentChanges
-      }));
-
-      saveData();
-      resetPaymentForm();
-      renderAll();
+      savePaymentFromForm();
     });
 
     els.logForm.addEventListener("submit", event => {
