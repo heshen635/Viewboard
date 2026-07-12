@@ -951,6 +951,17 @@
       text-align: right;
       white-space: nowrap;
     }
+    body.modal-open { overflow: hidden; }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline: 4px solid var(--primary); outline-offset: 3px; }
+    .btn-danger { background: #fff; color: #a61b1b; border-color: #a61b1b; }
+    .btn-danger:hover { background: #ffe9e7; }
+    #clearAllBtn { background: var(--danger); color: #111; border-color: var(--line); }
+    .todo-row { min-width: 0; }
+    .todo-row .todo-label,.todo-body { min-width: 0; overflow-wrap: anywhere; }
+    .all-todo-row { grid-template-columns: auto max-content minmax(0, 1fr) auto; }
+    .archive-todo-row { grid-template-columns: auto max-content minmax(0, 1fr) auto auto; }
+    .todo-project { white-space: nowrap; }
+    .all-todo-row .todo-date,.archive-todo-row .todo-date { margin-left: 0; align-self: center; text-align: right; white-space: nowrap; }
     @media (max-width: 1100px) {
       .hero,
       .storage-panel,
@@ -1002,7 +1013,7 @@
         <button id="exportJsonBtn" class="btn-success">导出 JSON</button>
         <button id="importJsonBtn">导入 JSON</button><button type="button" id="exportProjectsCsvBtn" class="btn-success">导出资开 CSV</button><button type="button" id="exportPaymentsCsvBtn" class="btn-success">导出付款 CSV</button><button type="button" id="exportLogsCsvBtn" class="btn-success">导出进展 CSV</button>
         <input id="importJsonFile" type="file" accept="application/json,.json" hidden>
-        <button id="clearAllBtn" class="btn-danger">清空看板</button>
+        <button id="clearAllBtn" class="btn-danger">清空全部数据</button>
       </div>
     </header>
 
@@ -1484,6 +1495,8 @@
       paymentDocs: { label: "付款资料", values: ["未开始", "收集中", "已收齐"] },
       paymentInitiated: { label: "付款状态", values: ["否", "是"] }
     };
+
+    let lastTodoTrigger = null;
 
     const PAYMENT_FILTERABLE_COLUMNS = PAYMENT_TABLE_COLUMNS.filter(col => col.key && col.filterable !== false);
     const TONE_SELECT_IDS = ["projectStatus", "riskLevel", "owner", "shipmentStatus", "paymentDocs", "paymentInitiated"];
@@ -2053,7 +2066,7 @@
       const thead = document.getElementById("paymentTableHead");
       if (!thead) return;
       thead.innerHTML = `<tr>${PAYMENT_TABLE_COLUMNS.map(col => {
-        if (true) {
+        if (!col.key || col.filterable === false) {
           return `<th>${escapeHtml(col.label)}</th>`;
         }
         const activeFilter = state.paymentColumnFilters[col.key] || "";
@@ -2970,7 +2983,7 @@
       document.getElementById("toggleProjectArchiveBtn").textContent=`查看已完成归档（${archived.length}）`;
       document.getElementById("projectArchiveItems").innerHTML=archived.length?archived.map(todo=>`<li class="todo-row done"><span></span><span class="todo-label">${escapeHtml(todo.text)}<small class="todo-date">完成于 ${escapeHtml(localDateString(todo.completedAt))}</small></span><div class="actions"><button type="button" onclick="restoreProjectTodo('${todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteProjectTodo('${todo.id}')">删除</button></div></li>`).join(""):'<li class="empty-state">暂无归档事项。</li>';
     }
-    window.openProjectTodo=function(id,returnView="dashboard"){state.activeTodoProjectId=id;state.todoReturnView=returnView;document.getElementById("todoOverlay").classList.remove("is-hidden");renderTodoPage();window.scrollTo(0,0)}
+    window.openProjectTodo=function(id,returnView="dashboard"){lastTodoTrigger=document.activeElement;state.activeTodoProjectId=id;state.todoReturnView=returnView;document.body.classList.add("modal-open");document.getElementById("todoOverlay").classList.remove("is-hidden");renderTodoPage();window.scrollTo(0,0);requestAnimationFrame(()=>document.getElementById("todoText").focus())}
     window.toggleProjectTodo=function(id,completed){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const todo=ensureProjectTodos(project).find(item=>item.id===id);if(!todo)return;todo.completed=completed;todo.completedAt=completed?new Date().toISOString():"";project.lastUpdated=todayString();saveData();renderTodoPage();renderTodayTodos()}
     window.restoreProjectTodo=function(id){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const todo=ensureProjectTodos(project).find(item=>item.id===id);if(!todo)return;todo.completed=false;todo.completedAt="";saveData();renderTodoPage();renderTodayTodos()}
     window.deleteProjectTodo=function(id){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);if(!project||!confirm("确定删除这条待办？"))return;project.todos=ensureProjectTodos(project).filter(item=>item.id!==id);saveData();renderTodoPage();renderTodayTodos()}
@@ -2983,9 +2996,9 @@
       const active=rows.filter(row=>!row.todo.completed||localDateString(row.todo.completedAt)===today).sort((a,b)=>Number(a.todo.completed)-Number(b.todo.completed));
       const archived=rows.filter(row=>row.todo.completed&&localDateString(row.todo.completedAt)!==today);
       document.getElementById("allTodoStats").textContent=`未完成 ${active.filter(row=>!row.todo.completed).length} 项｜今日完成 ${active.filter(row=>row.todo.completed).length} 项`;
-      document.getElementById("allTodoItems").innerHTML=active.length?active.map(row=>`<li class="todo-row all-todo-row ${row.todo.completed?"done":""}"><input class="row-check" type="checkbox" ${row.todo.completed?"checked":""} onchange="toggleAllTodo('${row.project.id}','${row.todo.id}',this.checked)"><span class="todo-label"><button type="button" class="btn-purple" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button>：${escapeHtml(row.todo.text)}${row.todo.completedAt?`<small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small>`:""}</span></li>`).join(""):'<li class="empty-state">暂无待办，可在上方快速添加。</li>';
+      document.getElementById("allTodoItems").innerHTML=active.length?active.map(row=>`<li class="todo-row all-todo-row ${row.todo.completed?"done":""}"><input class="row-check" type="checkbox" ${row.todo.completed?"checked":""} onchange="toggleAllTodo('${row.project.id}','${row.todo.id}',this.checked)"><button type="button" class="btn-purple todo-project" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button><span class="todo-body">${escapeHtml(row.todo.text)}</span>${row.todo.completedAt?`<small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small>`:""}</li>`).join(""):'<li class="empty-state">暂无待办，可在上方快速添加。</li>';
       document.getElementById("toggleAllArchiveBtn").textContent=`查看已完成归档（${archived.length}）`;
-      document.getElementById("allArchiveItems").innerHTML=archived.length?archived.map(row=>`<li class="todo-row all-todo-row done"><span></span><span class="todo-label"><button type="button" class="btn-purple" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button>：${escapeHtml(row.todo.text)}<small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small></span><div class="actions"><button type="button" onclick="restoreAllTodo('${row.project.id}','${row.todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteArchivedTodo('${row.project.id}','${row.todo.id}')">删除</button></div></li>`).join(""):'<li class="empty-state">暂无归档事项。</li>';
+      document.getElementById("allArchiveItems").innerHTML=archived.length?archived.map(row=>`<li class="todo-row archive-todo-row done"><span></span><button type="button" class="btn-purple todo-project" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button><span class="todo-body">${escapeHtml(row.todo.text)}</span><small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small><div class="actions"><button type="button" onclick="restoreAllTodo('${row.project.id}','${row.todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteArchivedTodo('${row.project.id}','${row.todo.id}')">删除</button></div></li>`).join(""):'<li class="empty-state">暂无归档事项。</li>';
     }
     window.toggleAllTodo=function(projectId,todoId,completed){const project=state.data.projects.find(item=>item.id===projectId);const todo=ensureProjectTodos(project).find(item=>item.id===todoId);if(!todo)return;todo.completed=completed;todo.completedAt=completed?new Date().toISOString():"";project.lastUpdated=todayString();saveData();renderAllTodoPage();renderTodayTodos()}
     window.restoreAllTodo=function(projectId,todoId){const project=state.data.projects.find(item=>item.id===projectId);const todo=ensureProjectTodos(project).find(item=>item.id===todoId);if(!todo)return;todo.completed=false;todo.completedAt="";saveData();renderAllTodoPage();renderTodayTodos()}
@@ -3158,10 +3171,10 @@
     els.exportJsonBtn.addEventListener("click", exportJson);
     document.getElementById("toggleAllArchiveBtn").addEventListener("click",()=>document.getElementById("allArchiveItems").classList.toggle("is-hidden"));
     document.getElementById("toggleProjectArchiveBtn").addEventListener("click",()=>document.getElementById("projectArchiveItems").classList.toggle("is-hidden"));
-    document.getElementById("openAllTodosBtn").addEventListener("click",()=>{document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage();window.scrollTo(0,0)});
-    document.getElementById("closeAllTodosBtn").addEventListener("click",()=>{document.getElementById("allTodosOverlay").classList.add("is-hidden");renderAll()});
+    document.getElementById("openAllTodosBtn").addEventListener("click",()=>{lastTodoTrigger=document.activeElement;document.body.classList.add("modal-open");document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage();window.scrollTo(0,0);requestAnimationFrame(()=>document.getElementById("quickTodoProject").focus())});
+    document.getElementById("closeAllTodosBtn").addEventListener("click",()=>{document.getElementById("allTodosOverlay").classList.add("is-hidden");document.body.classList.remove("modal-open");renderAll();document.getElementById("openAllTodosBtn").focus()});
     document.getElementById("quickTodoForm").addEventListener("submit",event=>{event.preventDefault();const project=state.data.projects.find(item=>item.id===document.getElementById("quickTodoProject").value);const input=document.getElementById("quickTodoText");const text=input.value.trim();if(!project||!text)return;ensureProjectTodos(project).push({id:createId(),text,completed:false,completedAt:""});project.lastUpdated=todayString();input.value="";saveData();renderAllTodoPage();input.focus()});
-    document.getElementById("closeTodoBtn").addEventListener("click",()=>{document.getElementById("todoOverlay").classList.add("is-hidden");state.activeTodoProjectId=null;if(state.todoReturnView==="allTodos"){document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage()}else{renderAll()}});
+    document.getElementById("closeTodoBtn").addEventListener("click",()=>{document.getElementById("todoOverlay").classList.add("is-hidden");state.activeTodoProjectId=null;if(state.todoReturnView==="allTodos"){document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage();requestAnimationFrame(()=>lastTodoTrigger?.focus())}else{document.body.classList.remove("modal-open");renderAll();requestAnimationFrame(()=>lastTodoTrigger?.focus())}});
     document.getElementById("todoForm").addEventListener("submit",event=>{event.preventDefault();const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const input=document.getElementById("todoText");const text=input.value.trim();if(!project||!text)return;ensureProjectTodos(project).push({id:createId(),text,completed:false,completedAt:""});input.value="";project.lastUpdated=todayString();saveData();renderTodoPage();input.focus()});
     bindFileImport(els.importJsonBtn, els.importJsonFile, importJsonFile);
     bindFileImport(els.importBaselineJsonBtn, els.baselineJsonFile, importBaselineJsonFile);
@@ -3214,6 +3227,22 @@
     els.exportLogsCsvBtn.addEventListener("click", exportLogsCsv);
     window.addEventListener("resize", syncProjectTableHeight);
 
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      const projectOverlay = document.getElementById("todoOverlay");
+      const allOverlay = document.getElementById("allTodosOverlay");
+      if (!projectOverlay.classList.contains("is-hidden")) {
+        const archive = document.getElementById("projectArchiveItems");
+        if (!archive.classList.contains("is-hidden")) archive.classList.add("is-hidden");
+        else document.getElementById("closeTodoBtn").click();
+        return;
+      }
+      if (!allOverlay.classList.contains("is-hidden")) {
+        const archive = document.getElementById("allArchiveItems");
+        if (!archive.classList.contains("is-hidden")) archive.classList.add("is-hidden");
+        else document.getElementById("closeAllTodosBtn").click();
+      }
+    });
     document.addEventListener("click", event => {
       const filterBtn = event.target.closest(".th-filter-btn");
       if (filterBtn?.dataset.paymentCol) {
