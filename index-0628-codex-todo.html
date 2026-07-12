@@ -962,6 +962,19 @@
     .archive-todo-row { grid-template-columns: auto max-content minmax(0, 1fr) auto auto; }
     .todo-project { white-space: nowrap; }
     .all-todo-row .todo-date,.archive-todo-row .todo-date { margin-left: 0; align-self: center; text-align: right; white-space: nowrap; }
+    #projectForm .button-row,
+    #paymentForm .button-row {
+      width: 100%;
+    }
+
+    #projectForm button[type="submit"],
+    #paymentForm button[type="submit"] {
+      width: 100%;
+      min-height: 58px;
+      padding: 14px 20px;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+    }
     @media (max-width: 1100px) {
       .hero,
       .storage-panel,
