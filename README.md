@@ -1,0 +1,1 @@
+A bold, offline-first project command center for tracking procurement workflows, managing project todos, crushing daily tasks, and turning completed work into a clear daily progress feed—all inside a single HTML file.
