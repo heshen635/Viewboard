@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>测试-第二次更正-个人项目进展看板</title>
+  <title>个人项目进展看板</title>
   <style>
     :root {
       --bg: #fff7d6;
@@ -878,6 +878,79 @@
       box-shadow: var(--shadow-small);
     }
 
+    #projectForm .field-full:has(#blocker),#projectForm .field-full:has(#nextAction),#projectForm .field-full:has(#dailyDone),.project-detail-row{display:none!important}
+    .today-todos{margin:18px 0;padding:18px}.todo-overlay{position:fixed;inset:0;z-index:500;overflow:auto;padding:32px;background:var(--bg)}.todo-page{max-width:900px;margin:auto;padding:20px}.todo-add{display:grid;grid-template-columns:1fr auto;gap:10px;margin:18px 0}.todo-list{list-style:none;padding:0;display:grid;gap:10px}.todo-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px;border:3px solid var(--line);box-shadow:var(--shadow-small);background:#fff}.todo-row.done .todo-label{text-decoration:line-through;color:var(--muted)}.todo-date{display:block;font-size:12px;color:var(--muted)}.all-todo-row{grid-template-columns:auto 1fr}#quickTodoForm{grid-template-columns:220px 1fr auto}
+    /* 表格列宽：短字段随内容，其他字段自动分配并允许换行 */
+    .project-table,
+    .payment-table {
+      table-layout: auto;
+      min-width: 100%;
+    }
+
+    .project-table th,
+    .project-table td,
+    .payment-table th,
+    .payment-table td {
+      width: auto !important;
+    }
+
+    .project-table td,
+    .payment-table td {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .project-table th:nth-child(1),
+    .project-table td:nth-child(1),
+    .payment-table th:nth-child(1),
+    .payment-table td:nth-child(1) {
+      width: 1% !important;
+      white-space: nowrap;
+    }
+
+    .project-table th:nth-child(2),
+    .project-table td:nth-child(2),
+    .project-table th:nth-child(4),
+    .project-table td:nth-child(4),
+    .project-table th:nth-child(5),
+    .project-table td:nth-child(5),
+    .project-table th:nth-child(6),
+    .project-table td:nth-child(6),
+    .payment-table th:nth-child(4),
+    .payment-table td:nth-child(4),
+    .payment-table th:nth-child(5),
+    .payment-table td:nth-child(5),
+    .payment-table th:nth-child(7),
+    .payment-table td:nth-child(7) {
+      width: 1% !important;
+      white-space: nowrap;
+      overflow-wrap: normal;
+    }
+    .project-table th:nth-child(3),
+    .project-table td:nth-child(3) {
+      width: 1% !important;
+      white-space: nowrap;
+      overflow-wrap: normal;
+    }
+
+    .project-table td:nth-child(3) .project-name-pill {
+      display: block;
+      width: 100%;
+      min-width: max-content;
+      white-space: nowrap;
+    }
+    .all-todo-row .todo-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .all-todo-row .todo-date {
+      margin-left: auto;
+      text-align: right;
+      white-space: nowrap;
+    }
     @media (max-width: 1100px) {
       .hero,
       .storage-panel,
@@ -925,9 +998,9 @@
         <p>适合采购、资开、下单、付款等项目的离线跟进管理，数据仅保存在当前浏览器。</p>
       </div>
       <div class="storage-panel" aria-label="数据工具">
-        <button class="btn-primary" id="addProjectTopBtn">新增资开项目</button>
+        <button class="btn-purple" id="openAllTodosBtn">全部待办</button>
         <button id="exportJsonBtn" class="btn-success">导出 JSON</button>
-        <button id="importJsonBtn">导入 JSON</button>
+        <button id="importJsonBtn">导入 JSON</button><button type="button" id="exportProjectsCsvBtn" class="btn-success">导出资开 CSV</button><button type="button" id="exportPaymentsCsvBtn" class="btn-success">导出付款 CSV</button><button type="button" id="exportLogsCsvBtn" class="btn-success">导出进展 CSV</button>
         <input id="importJsonFile" type="file" accept="application/json,.json" hidden>
         <button id="clearAllBtn" class="btn-danger">清空看板</button>
       </div>
@@ -947,7 +1020,6 @@
           <h2 id="projectFormTitle">资开项目</h2>
           <div class="title-actions">
             <button id="toggleProjectFormBtn" type="button">隐藏</button>
-            <button id="resetProjectFormBtn" type="button">清空表单</button>
           </div>
         </div>
         <form id="projectForm">
@@ -1024,7 +1096,6 @@
             </div>
           </div>
           <div class="button-row">
-            <button type="button" id="exportProjectsCsvBtn" class="btn-success">导出资开 CSV</button>
             <button type="submit" class="btn-primary">保存资开项目</button>
           </div>
         </form>
@@ -1035,7 +1106,6 @@
           <h2>资开项目列表</h2>
           <div class="title-actions">
             <button id="toggleAllProjectsBtn" type="button">全部选中</button>
-            <button id="editSelectedProjectBtn" type="button" class="btn-purple">编辑选中</button>
             <button id="deleteSelectedProjectBtn" type="button" class="btn-danger">删除选中</button>
           </div>
           <div class="batch-actions">
@@ -1081,6 +1151,7 @@
       </section>
     </section>
 
+    <section class="panel today-todos"><div class="section-title"><h2>今日已完成</h2><span id="todayTodoCount" class="muted">共 0 条</span></div><div id="todayTodoList" class="compare-list"></div></section>
     <section class="stats-grid payment-stats-grid" aria-label="下单付款快捷筛选">
       <button class="stat-card" id="quickUnshippedPaymentsBtn" type="button"><span>未发货数量</span><strong id="statUnshippedPayments">0</strong></button>
       <button class="stat-card" id="quickCollectingDocsBtn" type="button"><span>资料收集中数量</span><strong id="statCollectingDocs">0</strong></button>
@@ -1094,15 +1165,14 @@
           <h2 id="paymentFormTitle">下单付款</h2>
           <div class="title-actions">
             <button id="togglePaymentFormBtn" type="button">隐藏</button>
-            <button id="resetPaymentFormBtn" type="button">清空表单</button>
           </div>
         </div>
         <form id="paymentForm">
           <input type="hidden" id="paymentId">
           <div class="form-grid">
             <div>
-              <label for="paymentProjectNo">项目编号 *</label>
-              <input id="paymentProjectNo" required placeholder="例如：PO-2026-001">
+              <label for="paymentProjectNo">采购申请号 *</label>
+              <input id="paymentProjectNo" required placeholder="请输入采购申请号">
             </div>
             <div>
               <label for="paymentProjectName">项目名称 *</label>
@@ -1119,10 +1189,6 @@
             <div>
               <label for="requester">需求人</label>
               <input id="requester" placeholder="需求人">
-            </div>
-            <div>
-              <label for="requisitionNo">采购申请号</label>
-              <input id="requisitionNo" placeholder="采购申请号">
             </div>
             <div>
               <label for="poNo">PO号</label>
@@ -1162,7 +1228,6 @@
             </div>
           </div>
           <div class="button-row">
-            <button type="button" id="exportPaymentsCsvBtn" class="btn-success">导出下单付款 CSV</button>
             <button type="submit" class="btn-primary">保存下单付款</button>
           </div>
         </form>
@@ -1173,7 +1238,6 @@
           <h2>下单付款列表</h2>
           <div class="title-actions">
             <button id="toggleAllPaymentsBtn" type="button">全部选中</button>
-            <button id="editSelectedPaymentBtn" type="button" class="btn-purple">编辑选中</button>
             <button id="deleteSelectedPaymentBtn" type="button" class="btn-danger">删除选中</button>
           </div>
           <div class="batch-actions">
@@ -1267,7 +1331,6 @@
           </div>
           <div class="button-row">
             <button type="submit" class="btn-primary">保存进展</button>
-            <button type="button" id="exportLogsCsvBtn" class="btn-success">导出进展 CSV</button>
           </div>
         </form>
         </div>
@@ -1297,6 +1360,13 @@
         </div>
       </div>
     </section>
+    <section id="allTodosOverlay" class="todo-overlay is-hidden"><div class="panel todo-page">
+      <button id="closeAllTodosBtn" type="button">← 返回看板</button>
+      <div class="section-title"><h2>全部待办</h2><span id="allTodoStats" class="muted"></span></div>
+      <form id="quickTodoForm" class="todo-add"><select id="quickTodoProject" required><option value="">选择项目</option></select><input id="quickTodoText" required maxlength="300" placeholder="输入待办，按回车添加"><button class="btn-primary">添加</button></form>
+      <ul id="allTodoItems" class="todo-list"></ul><button id="toggleAllArchiveBtn" type="button">查看已完成归档（0）</button><ul id="allArchiveItems" class="todo-list is-hidden"></ul>
+    </div></section>
+    <section id="todoOverlay" class="todo-overlay is-hidden"><div class="panel todo-page"><button id="closeTodoBtn">← 返回看板</button><h2 id="todoProjectTitle">项目详情</h2><form id="todoForm" class="todo-add"><input id="todoText" required maxlength="300" placeholder="输入接下来要做的事"><button class="btn-primary">添加待办</button></form><ul id="todoItems" class="todo-list"></ul><button id="toggleProjectArchiveBtn" type="button">查看已完成归档（0）</button><ul id="projectArchiveItems" class="todo-list is-hidden"></ul></div></section>
   </main>
 
   <script>
@@ -1315,6 +1385,8 @@
       paymentColumnFilters: {},
       selectedProjectIds: [],
       selectedPaymentIds: [],
+      activeTodoProjectId: null,
+      todoReturnView: "dashboard",
       data: {
         projects: [],
         purchasePayments: [],
@@ -1413,11 +1485,25 @@
       paymentInitiated: { label: "付款状态", values: ["否", "是"] }
     };
 
+    const PAYMENT_FILTERABLE_COLUMNS = PAYMENT_TABLE_COLUMNS.filter(col => col.key && col.filterable !== false);
+    const TONE_SELECT_IDS = ["projectStatus", "riskLevel", "owner", "shipmentStatus", "paymentDocs", "paymentInitiated"];
+
+    function createEmptyData() {
+      return { projects: [], purchasePayments: [], progressHistory: [], updateHistory: [], logs: [] };
+    }
+
     // =============================
     // 工具函数
     // =============================
+    function localDateString(value = new Date()) {
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      const pad = number => String(number).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
     function todayString() {
-      return new Date().toISOString().slice(0, 10);
+      return localDateString();
     }
 
     function timestampForFilename() {
@@ -1564,7 +1650,7 @@
     }
 
     function refreshStatusSelectColors() {
-      ["projectStatus", "riskLevel", "owner", "shipmentStatus", "paymentDocs", "paymentInitiated"].forEach(id => {
+      TONE_SELECT_IDS.forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
         element.classList.add("status-tone");
@@ -1602,6 +1688,32 @@
 
     function mapBy(items, keyGetter) {
       return new Map(items.filter(Boolean).map(item => [keyGetter(item), item]));
+    }
+
+    function updateSelection(selectedIds, id, checked) {
+      return checked
+        ? [...new Set([...selectedIds, id])]
+        : selectedIds.filter(itemId => itemId !== id);
+    }
+
+    function toggleVisibleSelection(selectedIds, visibleIds) {
+      if (visibleIds.length === 0) return selectedIds;
+      const visibleIdSet = new Set(visibleIds);
+      const allVisibleSelected = visibleIds.every(id => selectedIds.includes(id));
+      return allVisibleSelected
+        ? selectedIds.filter(id => !visibleIdSet.has(id))
+        : [...new Set([...selectedIds, ...visibleIds])];
+    }
+
+    function getSelectedItems(items, selectedIds) {
+      const selectedIdSet = new Set(selectedIds);
+      return items.filter(item => selectedIdSet.has(item.id));
+    }
+
+    function renderBatchValueOptions(selectEl, config) {
+      selectEl.innerHTML = config
+        ? [`<option value="">选择${config.label}</option>`, ...config.values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join("")
+        : `<option value="">选择值</option>`;
     }
 
     function formatChange(label, beforeValue, afterValue) {
@@ -1847,22 +1959,16 @@
     function loadData() {
       const saved = localStorage.getItem(getStorageKey());
       if (!saved) {
-        state.data = { projects: [], purchasePayments: [], progressHistory: [], updateHistory: [], logs: [] };
+        state.data = createEmptyData();
         return;
       }
 
       try {
         const parsed = JSON.parse(saved);
-        state.data = {
-          projects: Array.isArray(parsed.projects) ? parsed.projects : [],
-          purchasePayments: Array.isArray(parsed.purchasePayments) ? parsed.purchasePayments : [],
-          progressHistory: Array.isArray(parsed.progressHistory) ? parsed.progressHistory : [],
-          updateHistory: Array.isArray(parsed.updateHistory) ? parsed.updateHistory : [],
-          logs: Array.isArray(parsed.logs) ? parsed.logs : []
-        };
+        state.data = normalizeBoardData(parsed);
       } catch (error) {
         alert("当前看板数据无法解析，请导入备份 JSON 或切换其他看板标识。");
-        state.data = { projects: [], purchasePayments: [], progressHistory: [], updateHistory: [], logs: [] };
+        state.data = createEmptyData();
       }
     }
 
@@ -1947,7 +2053,7 @@
       const thead = document.getElementById("paymentTableHead");
       if (!thead) return;
       thead.innerHTML = `<tr>${PAYMENT_TABLE_COLUMNS.map(col => {
-        if (!col.key || col.filterable === false) {
+        if (true) {
           return `<th>${escapeHtml(col.label)}</th>`;
         }
         const activeFilter = state.paymentColumnFilters[col.key] || "";
@@ -2016,7 +2122,8 @@
 
     function renderPaymentProjectFilter() {
       const selectedValue = els.paymentProjectFilter.value;
-      const projectKeys = [...new Set(state.data.purchasePayments.map(getPaymentProjectKey).filter(Boolean))];
+      const projectKeys = [...new Set(state.data.purchasePayments.map(getPaymentProjectKey).filter(Boolean))]
+        .sort((a, b) => String(a).localeCompare(String(b), "zh-CN"));
       els.paymentProjectFilter.innerHTML = [
         `<option value="">全部项目</option>`,
         ...projectKeys.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`)
@@ -2033,13 +2140,11 @@
         const matchesShipment = !shipmentStatus || getPaymentFieldValue(payment, "shipmentStatus") === shipmentStatus;
         const matchesDocs = !paymentDocs || getPaymentFieldValue(payment, "paymentDocs") === paymentDocs;
         const matchesInitiated = !paymentInitiated || getPaymentFieldValue(payment, "paymentInitiated") === paymentInitiated;
-        const matchesColumns = PAYMENT_TABLE_COLUMNS
-          .filter(col => col.key && col.filterable !== false)
-          .every(col => {
-            const filterVal = columnFilters[col.key];
-            if (!filterVal) return true;
-            return getPaymentFieldDisplayValue(payment, col.key) === filterVal;
-          });
+        const matchesColumns = PAYMENT_FILTERABLE_COLUMNS.every(col => {
+          const filterVal = columnFilters[col.key];
+          if (!filterVal) return true;
+          return getPaymentFieldDisplayValue(payment, col.key) === filterVal;
+        });
         return matchesProject && matchesShipment && matchesDocs && matchesInitiated && matchesColumns;
       });
     }
@@ -2184,6 +2289,7 @@
       renderPayments();
       renderLogs();
       renderCompareProgress();
+      renderTodayTodos();
       updateProjectBatchValueOptions();
       updatePaymentBatchValueOptions();
       refreshStatusSelectColors();
@@ -2260,6 +2366,23 @@
       };
     }
 
+    function getProjectFormBatchUpdateFields() {
+      const formProject = getProjectFormData();
+      return {
+        type: formProject.type,
+        status: formProject.status,
+        blocker: formProject.blocker,
+        nextAction: formProject.nextAction,
+        dailyDone: formProject.dailyDone,
+        owner: formProject.owner,
+        supplier: formProject.supplier,
+        projectRequisitionNo: formProject.projectRequisitionNo,
+        srmProjectNo: formProject.srmProjectNo,
+        lastUpdated: todayString(),
+        risk: formProject.risk
+      };
+    }
+
     function getProjectFieldMap() {
       return [
         { key: "no", label: "项目编号" },
@@ -2318,36 +2441,33 @@
     };
 
     window.selectProjectRow = function(id, checked) {
-      state.selectedProjectIds = checked
-        ? [...new Set([...state.selectedProjectIds, id])]
-        : state.selectedProjectIds.filter(itemId => itemId !== id);
+      state.selectedProjectIds = updateSelection(state.selectedProjectIds, id, checked);
       renderProjects();
       if (state.selectedProjectIds.length === 1) {
         const project = state.data.projects.find(item => item.id === state.selectedProjectIds[0]);
         if (project) fillProjectForm(project);
+      } else if (state.selectedProjectIds.length === 0) {
+        resetProjectForm();
       }
     };
 
-    window.selectProjectByName = function(id) {
-      const project = state.data.projects.find(item => item.id === id);
-      if (!project) return;
-      state.selectedProjectIds = [id];
-      renderProjects();
-      fillProjectForm(project);
-    };
+    window.selectProjectByName = function(id) { openProjectTodo(id); };
 
     function toggleAllVisibleProjects() {
-      const visibleIds = getFilteredProjects().map(project => project.id);
-      if (visibleIds.length === 0) return;
-      const areAllVisibleSelected = visibleIds.every(id => state.selectedProjectIds.includes(id));
-      state.selectedProjectIds = areAllVisibleSelected
-        ? state.selectedProjectIds.filter(id => !visibleIds.includes(id))
-        : [...new Set([...state.selectedProjectIds, ...visibleIds])];
+      state.selectedProjectIds = toggleVisibleSelection(
+        state.selectedProjectIds,
+        getFilteredProjects().map(project => project.id)
+      );
       renderProjects();
+      if (state.selectedProjectIds.length === 0) resetProjectForm();
+      if (state.selectedProjectIds.length === 1) {
+        const project = state.data.projects.find(item => item.id === state.selectedProjectIds[0]);
+        if (project) fillProjectForm(project);
+      }
     }
 
     function getSelectedProjects() {
-      return state.data.projects.filter(project => state.selectedProjectIds.includes(project.id));
+      return getSelectedItems(state.data.projects, state.selectedProjectIds);
     }
 
     function editSelectedProject() {
@@ -2388,10 +2508,7 @@
     }
 
     function updateProjectBatchValueOptions() {
-      const config = PROJECT_BATCH_OPTIONS[els.projectBatchField.value];
-      els.projectBatchValue.innerHTML = config
-        ? [`<option value="">选择${config.label}</option>`, ...config.values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join("")
-        : `<option value="">选择值</option>`;
+      renderBatchValueOptions(els.projectBatchValue, PROJECT_BATCH_OPTIONS[els.projectBatchField.value]);
     }
 
     function saveProjectBatch() {
@@ -2430,6 +2547,73 @@
       alert(`已批量保存 ${updatedCount} 个资开项目的${config.label}。`);
     }
 
+    function saveProjectFromForm() {
+      const selectedIds = [...state.selectedProjectIds];
+
+      if (selectedIds.length > 1) {
+        const batchFields = getProjectFormBatchUpdateFields();
+        let updatedCount = 0;
+        state.data.projects = state.data.projects.map(project => {
+          if (!selectedIds.includes(project.id)) return project;
+          const updatedProject = { ...project, ...batchFields };
+          appendHiddenProjectProgress(updatedProject, project);
+          const changes = collectFieldChanges(project, updatedProject, getProjectFieldMap());
+          if (changes.length === 0) return project;
+          appendUpdateHistory(createUpdateHistoryEntry({
+            entityType: "资开项目",
+            entityKey: project.no,
+            entityName: project.name,
+            action: "manual-batch-updated",
+            source: "manual-save",
+            changes
+          }));
+          updatedCount += 1;
+          return updatedProject;
+        });
+        state.selectedProjectIds = [];
+        saveData();
+        resetProjectForm();
+        renderAll();
+        alert(updatedCount > 0 ? `已保存 ${updatedCount} 个资开项目。` : "所选资开项目没有可保存的修改。");
+        return;
+      }
+
+      const project = getProjectFormData();
+      if (!project.no || !project.name) {
+        alert("请填写项目编号和项目名称。");
+        return;
+      }
+
+      const duplicate = state.data.projects.find(item => item.no === project.no && item.id !== project.id);
+      if (duplicate) {
+        alert("资开项目编号已存在，请使用唯一编号。");
+        return;
+      }
+
+      const index = state.data.projects.findIndex(item => item.id === project.id);
+      const beforeProject = index >= 0 ? state.data.projects[index] : null;
+      appendHiddenProjectProgress(project, beforeProject);
+      const projectChanges = collectFieldChanges(beforeProject, project, getProjectFieldMap());
+      if (index >= 0) {
+        state.data.projects[index] = project;
+      } else {
+        state.data.projects.unshift(project);
+      }
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "资开项目",
+        entityKey: project.no,
+        entityName: project.name,
+        action: beforeProject ? "manual-updated" : "manual-created",
+        source: "manual-save",
+        changes: projectChanges
+      }));
+
+      state.selectedProjectIds = [];
+      saveData();
+      resetProjectForm();
+      renderAll();
+    }
+
     window.deleteProject = function(id) {
       const project = state.data.projects.find(item => item.id === id);
       if (!project) return;
@@ -2462,13 +2646,28 @@
         projectName: document.getElementById("paymentProjectName").value.trim(),
         procurementType: document.getElementById("procurementType").value.trim(),
         requester: document.getElementById("requester").value.trim(),
-        requisitionNo: document.getElementById("requisitionNo").value.trim(),
+        requisitionNo: document.getElementById("paymentProjectNo").value.trim(),
         requisitionContent: document.getElementById("requisitionContent").value.trim(),
         paymentBlocker: document.getElementById("paymentBlocker").value.trim(),
         poNo: document.getElementById("poNo").value.trim(),
         shipmentStatus: document.getElementById("shipmentStatus").value,
         paymentDocs: document.getElementById("paymentDocs").value,
         paymentInitiated: document.getElementById("paymentInitiated").value
+      };
+    }
+
+    function getPaymentFormBatchUpdateFields() {
+      const formPayment = getPaymentFormData();
+      return {
+        procurementType: formPayment.procurementType,
+        requester: formPayment.requester,
+        requisitionNo: formPayment.requisitionNo,
+        requisitionContent: formPayment.requisitionContent,
+        paymentBlocker: formPayment.paymentBlocker,
+        poNo: formPayment.poNo,
+        shipmentStatus: formPayment.shipmentStatus,
+        paymentDocs: formPayment.paymentDocs,
+        paymentInitiated: formPayment.paymentInitiated
       };
     }
 
@@ -2508,7 +2707,6 @@
       document.getElementById("paymentProjectName").value = payment.projectName || "";
       document.getElementById("procurementType").value = ["固资", "低耗", "服务"].includes(payment.procurementType) ? payment.procurementType : "固资";
       document.getElementById("requester").value = payment.requester || "";
-      document.getElementById("requisitionNo").value = payment.requisitionNo || "";
       document.getElementById("requisitionContent").value = payment.requisitionContent || "";
       document.getElementById("paymentBlocker").value = payment.paymentBlocker || "";
       document.getElementById("poNo").value = payment.poNo || "";
@@ -2525,28 +2723,31 @@
     };
 
     window.selectPaymentRow = function(id, checked) {
-      state.selectedPaymentIds = checked
-        ? [...new Set([...state.selectedPaymentIds, id])]
-        : state.selectedPaymentIds.filter(itemId => itemId !== id);
+      state.selectedPaymentIds = updateSelection(state.selectedPaymentIds, id, checked);
       renderPayments();
       if (state.selectedPaymentIds.length === 1) {
         const payment = state.data.purchasePayments.find(item => item.id === state.selectedPaymentIds[0]);
         if (payment) fillPaymentForm(payment);
+      } else if (state.selectedPaymentIds.length === 0) {
+        resetPaymentForm();
       }
     };
 
     function toggleAllVisiblePayments() {
-      const visibleIds = getFilteredPayments().map(payment => payment.id);
-      if (visibleIds.length === 0) return;
-      const areAllVisibleSelected = visibleIds.every(id => state.selectedPaymentIds.includes(id));
-      state.selectedPaymentIds = areAllVisibleSelected
-        ? state.selectedPaymentIds.filter(id => !visibleIds.includes(id))
-        : [...new Set([...state.selectedPaymentIds, ...visibleIds])];
+      state.selectedPaymentIds = toggleVisibleSelection(
+        state.selectedPaymentIds,
+        getFilteredPayments().map(payment => payment.id)
+      );
       renderPayments();
+      if (state.selectedPaymentIds.length === 0) resetPaymentForm();
+      if (state.selectedPaymentIds.length === 1) {
+        const payment = state.data.purchasePayments.find(item => item.id === state.selectedPaymentIds[0]);
+        if (payment) fillPaymentForm(payment);
+      }
     }
 
     function getSelectedPayments() {
-      return state.data.purchasePayments.filter(payment => state.selectedPaymentIds.includes(payment.id));
+      return getSelectedItems(state.data.purchasePayments, state.selectedPaymentIds);
     }
 
     function editSelectedPayment() {
@@ -2587,10 +2788,7 @@
     };
 
     function updatePaymentBatchValueOptions() {
-      const config = PAYMENT_BATCH_OPTIONS[els.paymentBatchField.value];
-      els.paymentBatchValue.innerHTML = config
-        ? [`<option value="">选择${config.label}</option>`, ...config.values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join("")
-        : `<option value="">选择值</option>`;
+      renderBatchValueOptions(els.paymentBatchValue, PAYMENT_BATCH_OPTIONS[els.paymentBatchField.value]);
     }
 
     function savePaymentBatch() {
@@ -2627,6 +2825,71 @@
       saveData();
       renderAll();
       alert(`已批量保存 ${updatedCount} 条下单付款记录的${config.label}。`);
+    }
+
+    function savePaymentFromForm() {
+      const selectedIds = [...state.selectedPaymentIds];
+
+      if (selectedIds.length > 1) {
+        const batchFields = getPaymentFormBatchUpdateFields();
+        let updatedCount = 0;
+        state.data.purchasePayments = state.data.purchasePayments.map(payment => {
+          if (!selectedIds.includes(payment.id)) return payment;
+          const updatedPayment = { ...payment, ...batchFields };
+          const changes = collectFieldChanges(payment, updatedPayment, getPaymentFieldMap());
+          if (changes.length === 0) return payment;
+          appendUpdateHistory(createUpdateHistoryEntry({
+            entityType: "下单付款",
+            entityKey: payment.projectNo,
+            entityName: payment.projectName,
+            action: "manual-batch-updated",
+            source: "manual-save",
+            changes
+          }));
+          updatedCount += 1;
+          return updatedPayment;
+        });
+        state.selectedPaymentIds = [];
+        saveData();
+        resetPaymentForm();
+        renderAll();
+        alert(updatedCount > 0 ? `已保存 ${updatedCount} 条下单付款记录。` : "所选下单付款记录没有可保存的修改。");
+        return;
+      }
+
+      const payment = getPaymentFormData();
+      if (!payment.projectNo || !payment.projectName) {
+        alert("请填写下单付款的项目编号和项目名称。");
+        return;
+      }
+
+      const duplicate = state.data.purchasePayments.find(item => item.projectNo === payment.projectNo && item.id !== payment.id);
+      if (duplicate) {
+        alert("下单付款项目编号已存在，请使用唯一编号。");
+        return;
+      }
+
+      const index = state.data.purchasePayments.findIndex(item => item.id === payment.id);
+      const beforePayment = index >= 0 ? state.data.purchasePayments[index] : null;
+      const paymentChanges = collectFieldChanges(beforePayment, payment, getPaymentFieldMap());
+      if (index >= 0) {
+        state.data.purchasePayments[index] = payment;
+      } else {
+        state.data.purchasePayments.unshift(payment);
+      }
+      appendUpdateHistory(createUpdateHistoryEntry({
+        entityType: "下单付款",
+        entityKey: payment.projectNo,
+        entityName: payment.projectName,
+        action: beforePayment ? "manual-updated" : "manual-created",
+        source: "manual-save",
+        changes: paymentChanges
+      }));
+
+      state.selectedPaymentIds = [];
+      saveData();
+      resetPaymentForm();
+      renderAll();
     }
 
     window.deletePayment = function(id) {
@@ -2694,6 +2957,52 @@
       renderAll();
     };
 
+    function ensureProjectTodos(project){if(!project)return[];if(!Array.isArray(project.todos))project.todos=project.nextAction?[{id:createId(),text:project.nextAction,completed:false,completedAt:""}]:[];return project.todos}
+    function renderTodayTodos(){const today=todayString();const rows=state.data.projects.flatMap(project=>ensureProjectTodos(project).filter(todo=>todo.completed&&localDateString(todo.completedAt)===today).map(todo=>({project,todo})));document.getElementById("todayTodoCount").textContent=`共 ${rows.length} 条`;document.getElementById("todayTodoList").innerHTML=rows.length?rows.map(row=>`<div class="compare-card"><strong>${escapeHtml(row.project.name)}</strong> 项目已完成：${escapeHtml(row.todo.text)}</div>`).join(""):'<div class="empty-state">今天还没有完成的事项。</div>'}
+    function renderTodoPage(){
+      const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);
+      if(!project)return;
+      document.getElementById("todoProjectTitle").textContent=project.name;
+      const today=todayString(),todos=ensureProjectTodos(project);
+      const active=todos.filter(todo=>!todo.completed||localDateString(todo.completedAt)===today);
+      const archived=todos.filter(todo=>todo.completed&&localDateString(todo.completedAt)!==today);
+      document.getElementById("todoItems").innerHTML=active.length?active.map(todo=>`<li class="todo-row ${todo.completed?"done":""}"><input class="row-check" type="checkbox" ${todo.completed?"checked":""} onchange="toggleProjectTodo('${todo.id}',this.checked)"><span class="todo-label">${escapeHtml(todo.text)}${todo.completedAt?`<small class="todo-date">完成于 ${escapeHtml(localDateString(todo.completedAt))}</small>`:""}</span><button type="button" class="btn-danger" onclick="deleteProjectTodo('${todo.id}')">删除</button></li>`).join(""):'<li class="empty-state">暂无待办。</li>';
+      document.getElementById("toggleProjectArchiveBtn").textContent=`查看已完成归档（${archived.length}）`;
+      document.getElementById("projectArchiveItems").innerHTML=archived.length?archived.map(todo=>`<li class="todo-row done"><span></span><span class="todo-label">${escapeHtml(todo.text)}<small class="todo-date">完成于 ${escapeHtml(localDateString(todo.completedAt))}</small></span><div class="actions"><button type="button" onclick="restoreProjectTodo('${todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteProjectTodo('${todo.id}')">删除</button></div></li>`).join(""):'<li class="empty-state">暂无归档事项。</li>';
+    }
+    window.openProjectTodo=function(id,returnView="dashboard"){state.activeTodoProjectId=id;state.todoReturnView=returnView;document.getElementById("todoOverlay").classList.remove("is-hidden");renderTodoPage();window.scrollTo(0,0)}
+    window.toggleProjectTodo=function(id,completed){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const todo=ensureProjectTodos(project).find(item=>item.id===id);if(!todo)return;todo.completed=completed;todo.completedAt=completed?new Date().toISOString():"";project.lastUpdated=todayString();saveData();renderTodoPage();renderTodayTodos()}
+    window.restoreProjectTodo=function(id){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const todo=ensureProjectTodos(project).find(item=>item.id===id);if(!todo)return;todo.completed=false;todo.completedAt="";saveData();renderTodoPage();renderTodayTodos()}
+    window.deleteProjectTodo=function(id){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);if(!project||!confirm("确定删除这条待办？"))return;project.todos=ensureProjectTodos(project).filter(item=>item.id!==id);saveData();renderTodoPage();renderTodayTodos()}
+
+    function renderAllTodoPage(){
+      const projectSelect=document.getElementById("quickTodoProject"),selected=projectSelect.value;
+      projectSelect.innerHTML='<option value="">选择项目</option>'+state.data.projects.map(project=>`<option value="${project.id}">${escapeHtml(project.name)}</option>`).join("");
+      if(state.data.projects.some(project=>project.id===selected))projectSelect.value=selected;
+      const today=todayString(),rows=state.data.projects.flatMap(project=>ensureProjectTodos(project).map(todo=>({project,todo})));
+      const active=rows.filter(row=>!row.todo.completed||localDateString(row.todo.completedAt)===today).sort((a,b)=>Number(a.todo.completed)-Number(b.todo.completed));
+      const archived=rows.filter(row=>row.todo.completed&&localDateString(row.todo.completedAt)!==today);
+      document.getElementById("allTodoStats").textContent=`未完成 ${active.filter(row=>!row.todo.completed).length} 项｜今日完成 ${active.filter(row=>row.todo.completed).length} 项`;
+      document.getElementById("allTodoItems").innerHTML=active.length?active.map(row=>`<li class="todo-row all-todo-row ${row.todo.completed?"done":""}"><input class="row-check" type="checkbox" ${row.todo.completed?"checked":""} onchange="toggleAllTodo('${row.project.id}','${row.todo.id}',this.checked)"><span class="todo-label"><button type="button" class="btn-purple" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button>：${escapeHtml(row.todo.text)}${row.todo.completedAt?`<small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small>`:""}</span></li>`).join(""):'<li class="empty-state">暂无待办，可在上方快速添加。</li>';
+      document.getElementById("toggleAllArchiveBtn").textContent=`查看已完成归档（${archived.length}）`;
+      document.getElementById("allArchiveItems").innerHTML=archived.length?archived.map(row=>`<li class="todo-row all-todo-row done"><span></span><span class="todo-label"><button type="button" class="btn-purple" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button>：${escapeHtml(row.todo.text)}<small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small></span><div class="actions"><button type="button" onclick="restoreAllTodo('${row.project.id}','${row.todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteArchivedTodo('${row.project.id}','${row.todo.id}')">删除</button></div></li>`).join(""):'<li class="empty-state">暂无归档事项。</li>';
+    }
+    window.toggleAllTodo=function(projectId,todoId,completed){const project=state.data.projects.find(item=>item.id===projectId);const todo=ensureProjectTodos(project).find(item=>item.id===todoId);if(!todo)return;todo.completed=completed;todo.completedAt=completed?new Date().toISOString():"";project.lastUpdated=todayString();saveData();renderAllTodoPage();renderTodayTodos()}
+    window.restoreAllTodo=function(projectId,todoId){const project=state.data.projects.find(item=>item.id===projectId);const todo=ensureProjectTodos(project).find(item=>item.id===todoId);if(!todo)return;todo.completed=false;todo.completedAt="";saveData();renderAllTodoPage();renderTodayTodos()}
+    window.deleteArchivedTodo=function(projectId,todoId){const project=state.data.projects.find(item=>item.id===projectId);if(!project||!confirm("确定永久删除这条归档待办？"))return;project.todos=ensureProjectTodos(project).filter(item=>item.id!==todoId);saveData();renderAllTodoPage()}
+    window.openProjectFromAllTodos=function(projectId){document.getElementById("allTodosOverlay").classList.add("is-hidden");openProjectTodo(projectId,"allTodos")}
+
+    function scheduleDailyRefresh() {
+      const now = new Date();
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      window.setTimeout(() => {
+        renderTodayTodos();
+        const allTodosOverlay = document.getElementById("allTodosOverlay");
+        if (allTodosOverlay && !allTodosOverlay.classList.contains("is-hidden")) renderAllTodoPage();
+        scheduleDailyRefresh();
+      }, nextMidnight.getTime() - now.getTime() + 1000);
+    }
+
     // =============================
     // 导入导出
     // =============================
@@ -2749,6 +3058,7 @@
         state.compareBaseline = normalizeBoardData(parsed);
         state.compareSummary = null;
         renderCompareProgress();
+      renderTodayTodos();
         alert(`基准 JSON 已导入：${state.compareBaseline.projects.length} 个资开项目，${state.compareBaseline.purchasePayments.length} 条下单付款。`);
       } catch (error) {
         alert("基准 JSON 导入失败，请确认文件格式正确。");
@@ -2827,34 +3137,39 @@
       downloadFile(`每日进展-${state.boardKey}.csv`, toCsv(headers, rows), "text/csv;charset=utf-8");
     }
 
+    function bindFileImport(buttonEl, inputEl, handler) {
+      buttonEl.addEventListener("click", () => inputEl.click());
+      inputEl.addEventListener("change", event => {
+        const file = event.target.files[0];
+        if (file) handler(file);
+        event.target.value = "";
+      });
+    }
+
+    function bindFormToggle(buttonEl, formEl, setHidden) {
+      buttonEl.addEventListener("click", () => {
+        setHidden(!formEl.classList.contains("is-hidden"));
+      });
+    }
+
     // =============================
     // 事件绑定
     // =============================
     els.exportJsonBtn.addEventListener("click", exportJson);
-    els.importJsonBtn.addEventListener("click", () => els.importJsonFile.click());
-    els.importJsonFile.addEventListener("change", event => {
-      const file = event.target.files[0];
-      if (file) importJsonFile(file);
-      event.target.value = "";
-    });
-
-    els.importBaselineJsonBtn.addEventListener("click", () => els.baselineJsonFile.click());
-    els.baselineJsonFile.addEventListener("change", event => {
-      const file = event.target.files[0];
-      if (file) importBaselineJsonFile(file);
-      event.target.value = "";
-    });
-
-    els.importTodayJsonBtn.addEventListener("click", () => els.todayJsonFile.click());
-    els.todayJsonFile.addEventListener("change", event => {
-      const file = event.target.files[0];
-      if (file) importTodayJsonAndCompare(file);
-      event.target.value = "";
-    });
+    document.getElementById("toggleAllArchiveBtn").addEventListener("click",()=>document.getElementById("allArchiveItems").classList.toggle("is-hidden"));
+    document.getElementById("toggleProjectArchiveBtn").addEventListener("click",()=>document.getElementById("projectArchiveItems").classList.toggle("is-hidden"));
+    document.getElementById("openAllTodosBtn").addEventListener("click",()=>{document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage();window.scrollTo(0,0)});
+    document.getElementById("closeAllTodosBtn").addEventListener("click",()=>{document.getElementById("allTodosOverlay").classList.add("is-hidden");renderAll()});
+    document.getElementById("quickTodoForm").addEventListener("submit",event=>{event.preventDefault();const project=state.data.projects.find(item=>item.id===document.getElementById("quickTodoProject").value);const input=document.getElementById("quickTodoText");const text=input.value.trim();if(!project||!text)return;ensureProjectTodos(project).push({id:createId(),text,completed:false,completedAt:""});project.lastUpdated=todayString();input.value="";saveData();renderAllTodoPage();input.focus()});
+    document.getElementById("closeTodoBtn").addEventListener("click",()=>{document.getElementById("todoOverlay").classList.add("is-hidden");state.activeTodoProjectId=null;if(state.todoReturnView==="allTodos"){document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage()}else{renderAll()}});
+    document.getElementById("todoForm").addEventListener("submit",event=>{event.preventDefault();const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const input=document.getElementById("todoText");const text=input.value.trim();if(!project||!text)return;ensureProjectTodos(project).push({id:createId(),text,completed:false,completedAt:""});input.value="";project.lastUpdated=todayString();saveData();renderTodoPage();input.focus()});
+    bindFileImport(els.importJsonBtn, els.importJsonFile, importJsonFile);
+    bindFileImport(els.importBaselineJsonBtn, els.baselineJsonFile, importBaselineJsonFile);
+    bindFileImport(els.importTodayJsonBtn, els.todayJsonFile, importTodayJsonAndCompare);
 
     els.clearAllBtn.addEventListener("click", () => {
       if (!confirm("确定清空当前看板的全部资开项目、下单付款和进展记录？此操作无法撤销，建议先导出 JSON 备份。")) return;
-      state.data = { projects: [], purchasePayments: [], progressHistory: [], updateHistory: [], logs: [] };
+      state.data = createEmptyData();
       state.compareBaseline = null;
       state.compareSummary = null;
       saveData();
@@ -2870,32 +3185,16 @@
     els.quickNegotiationBtn.addEventListener("click", () => applyProjectQuickFilter({ status: "议价" }));
     els.quickContractBtn.addEventListener("click", () => applyProjectQuickFilter({ status: "合同签署" }));
 
-    els.addProjectTopBtn.addEventListener("click", () => {
-      setProjectFormHidden(false);
-      resetProjectForm();
-      document.getElementById("projectNo").focus();
-    });
 
-    els.toggleProjectFormBtn.addEventListener("click", () => {
-      setProjectFormHidden(!els.projectForm.classList.contains("is-hidden"));
-    });
+    bindFormToggle(els.toggleProjectFormBtn, els.projectForm, setProjectFormHidden);
+    bindFormToggle(els.togglePaymentFormBtn, els.paymentForm, setPaymentFormHidden);
+    bindFormToggle(els.toggleLogFormBtn, els.logForm, setLogFormHidden);
 
-    els.togglePaymentFormBtn.addEventListener("click", () => {
-      setPaymentFormHidden(!els.paymentForm.classList.contains("is-hidden"));
-    });
-
-    els.toggleLogFormBtn.addEventListener("click", () => {
-      setLogFormHidden(!els.logForm.classList.contains("is-hidden"));
-    });
-
-    els.resetProjectFormBtn.addEventListener("click", resetProjectForm);
     els.projectTypeListFilter.addEventListener("change", renderProjects);
     els.toggleAllProjectsBtn.addEventListener("click", toggleAllVisibleProjects);
-    els.editSelectedProjectBtn.addEventListener("click", editSelectedProject);
     els.deleteSelectedProjectBtn.addEventListener("click", deleteSelectedProject);
     els.projectBatchField.addEventListener("change", updateProjectBatchValueOptions);
     els.saveProjectBatchBtn.addEventListener("click", saveProjectBatch);
-    els.resetPaymentFormBtn.addEventListener("click", resetPaymentForm);
     els.resetLogFormBtn.addEventListener("click", resetLogForm);
     els.exportProjectsCsvBtn.addEventListener("click", exportProjectsCsv);
     els.paymentProjectFilter.addEventListener("change", () => {
@@ -2908,7 +3207,6 @@
     els.quickUninitiatedPaymentsBtn.addEventListener("click", () => applyPaymentQuickFilter({ paymentInitiated: "否" }));
     els.resetPaymentQuickFilterBtn.addEventListener("click", () => applyPaymentQuickFilter());
     els.toggleAllPaymentsBtn.addEventListener("click", toggleAllVisiblePayments);
-    els.editSelectedPaymentBtn.addEventListener("click", editSelectedPayment);
     els.deleteSelectedPaymentBtn.addEventListener("click", deleteSelectedPayment);
     els.paymentBatchField.addEventListener("change", updatePaymentBatchValueOptions);
     els.savePaymentBatchBtn.addEventListener("click", savePaymentBatch);
@@ -2946,81 +3244,18 @@
       if (event.key === "Escape") closePaymentColumnFilterMenu();
     });
 
-    ["projectStatus", "riskLevel", "owner", "shipmentStatus", "paymentDocs", "paymentInitiated"].forEach(id => {
+    TONE_SELECT_IDS.forEach(id => {
       document.getElementById(id).addEventListener("change", refreshStatusSelectColors);
     });
 
     els.projectForm.addEventListener("submit", event => {
       event.preventDefault();
-      const project = getProjectFormData();
-      if (!project.no || !project.name) {
-        alert("请填写项目编号和项目名称。");
-        return;
-      }
-
-      const duplicate = state.data.projects.find(item => item.no === project.no && item.id !== project.id);
-      if (duplicate) {
-        alert("资开项目编号已存在，请使用唯一编号。");
-        return;
-      }
-
-      const index = state.data.projects.findIndex(item => item.id === project.id);
-      const beforeProject = index >= 0 ? state.data.projects[index] : null;
-      appendHiddenProjectProgress(project, beforeProject);
-      const projectChanges = collectFieldChanges(beforeProject, project, getProjectFieldMap());
-      if (index >= 0) {
-        state.data.projects[index] = project;
-      } else {
-        state.data.projects.unshift(project);
-      }
-      appendUpdateHistory(createUpdateHistoryEntry({
-        entityType: "资开项目",
-        entityKey: project.no,
-        entityName: project.name,
-        action: beforeProject ? "manual-updated" : "manual-created",
-        source: "manual-save",
-        changes: projectChanges
-      }));
-
-      saveData();
-      resetProjectForm();
-      renderAll();
+      saveProjectFromForm();
     });
 
     els.paymentForm.addEventListener("submit", event => {
       event.preventDefault();
-      const payment = getPaymentFormData();
-      if (!payment.projectNo || !payment.projectName) {
-        alert("请填写下单付款的项目编号和项目名称。");
-        return;
-      }
-
-      const duplicate = state.data.purchasePayments.find(item => item.projectNo === payment.projectNo && item.id !== payment.id);
-      if (duplicate) {
-        alert("下单付款项目编号已存在，请使用唯一编号。");
-        return;
-      }
-
-      const index = state.data.purchasePayments.findIndex(item => item.id === payment.id);
-      const beforePayment = index >= 0 ? state.data.purchasePayments[index] : null;
-      const paymentChanges = collectFieldChanges(beforePayment, payment, getPaymentFieldMap());
-      if (index >= 0) {
-        state.data.purchasePayments[index] = payment;
-      } else {
-        state.data.purchasePayments.unshift(payment);
-      }
-      appendUpdateHistory(createUpdateHistoryEntry({
-        entityType: "下单付款",
-        entityKey: payment.projectNo,
-        entityName: payment.projectName,
-        action: beforePayment ? "manual-updated" : "manual-created",
-        source: "manual-save",
-        changes: paymentChanges
-      }));
-
-      saveData();
-      resetPaymentForm();
-      renderAll();
+      savePaymentFromForm();
     });
 
     els.logForm.addEventListener("submit", event => {
@@ -3058,6 +3293,7 @@
     resetPaymentForm();
     resetLogForm();
     renderAll();
+    scheduleDailyRefresh();
   </script>
 </body>
 </html>
