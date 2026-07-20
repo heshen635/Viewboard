@@ -430,22 +430,25 @@
     .project-table td:nth-child(4) { width: 120px; }
 
     .project-table th:nth-child(5),
-    .project-table td:nth-child(5) { width: 72px; }
+    .project-table td:nth-child(5) { width: 120px; }
 
     .project-table th:nth-child(6),
-    .project-table td:nth-child(6) { width: 120px; }
+    .project-table td:nth-child(6) { width: 72px; }
 
     .project-table th:nth-child(7),
-    .project-table td:nth-child(7) { width: 130px; }
+    .project-table td:nth-child(7) { width: 120px; }
 
     .project-table th:nth-child(8),
-    .project-table td:nth-child(8) { width: 120px; }
+    .project-table td:nth-child(8) { width: 130px; }
 
     .project-table th:nth-child(9),
-    .project-table td:nth-child(9) { width: 110px; }
+    .project-table td:nth-child(9) { width: 120px; }
 
     .project-table th:nth-child(10),
     .project-table td:nth-child(10) { width: 110px; }
+
+    .project-table th:nth-child(11),
+    .project-table td:nth-child(11) { width: 110px; }
 
     th,
     td {
@@ -916,6 +919,8 @@
     .project-table td:nth-child(5),
     .project-table th:nth-child(6),
     .project-table td:nth-child(6),
+    .project-table th:nth-child(7),
+    .project-table td:nth-child(7),
     .payment-table th:nth-child(4),
     .payment-table td:nth-child(4),
     .payment-table th:nth-child(5),
@@ -962,6 +967,9 @@
     .archive-todo-row { grid-template-columns: auto max-content minmax(0, 1fr) auto auto; }
     .todo-project { white-space: nowrap; }
     .all-todo-row .todo-date,.archive-todo-row .todo-date { margin-left: 0; align-self: center; text-align: right; white-space: nowrap; }
+    .reflection-editor { margin-top: 28px; padding-top: 22px; border-top: 4px solid var(--line); }
+    .reflection-editor textarea { width: 100%; min-height: 280px; resize: vertical; line-height: 1.7; }
+    .reflection-save-status { font-size: 13px; color: var(--muted); }
     #projectForm .button-row,
     #paymentForm .button-row {
       width: 100%;
@@ -1024,7 +1032,7 @@
       <div class="storage-panel" aria-label="数据工具">
         <button class="btn-purple" id="openAllTodosBtn">全部待办</button>
         <button id="exportJsonBtn" class="btn-success">导出 JSON</button>
-        <button id="importJsonBtn">导入 JSON</button><button type="button" id="exportProjectsCsvBtn" class="btn-success">导出资开 CSV</button><button type="button" id="exportPaymentsCsvBtn" class="btn-success">导出付款 CSV</button><button type="button" id="exportLogsCsvBtn" class="btn-success">导出进展 CSV</button>
+        <button id="importJsonBtn">导入 JSON</button>
         <input id="importJsonFile" type="file" accept="application/json,.json" hidden>
         <button id="clearAllBtn" class="btn-danger">清空全部数据</button>
       </div>
@@ -1064,6 +1072,10 @@
                 <option>集采项目</option>
                 <option selected>服务项目</option>
               </select>
+            </div>
+            <div>
+              <label for="materialGroup">物料组</label>
+              <input id="materialGroup" placeholder="请输入物料组">
             </div>
             <div>
               <label for="projectStatus">当前状态</label>
@@ -1127,9 +1139,10 @@
 
       <section class="panel table-panel">
         <div class="table-header project-table-header">
-          <h2>资开项目列表</h2>
+          <h2 id="projectListTitle">资开项目列表</h2>
           <div class="title-actions">
             <button id="toggleAllProjectsBtn" type="button">全部选中</button>
+            <button id="clearProjectSelectionBtn" type="button">取消全选</button>
             <button id="deleteSelectedProjectBtn" type="button" class="btn-danger">删除选中</button>
           </div>
           <div class="batch-actions">
@@ -1150,6 +1163,9 @@
             <option>固资&低耗</option>
             <option>集采项目</option>
             <option>服务项目</option>
+            <option value="已完成::固资&低耗">已完成-固资&低耗项目</option>
+            <option value="已完成::集采项目">已完成-集采项目</option>
+            <option value="已完成::服务项目">已完成-服务项目</option>
           </select>
           <span class="muted" id="projectCountText">共 0 条</span>
         </div>
@@ -1161,6 +1177,7 @@
                 <th>编号</th>
                 <th>项目名称</th>
                 <th>类型</th>
+                <th>物料组</th>
                 <th>状态</th>
                 <th>风险</th>
                 <th>采购申请号</th>
@@ -1262,6 +1279,7 @@
           <h2>下单付款列表</h2>
           <div class="title-actions">
             <button id="toggleAllPaymentsBtn" type="button">全部选中</button>
+            <button id="clearPaymentSelectionBtn" type="button">取消全选</button>
             <button id="deleteSelectedPaymentBtn" type="button" class="btn-danger">删除选中</button>
           </div>
           <div class="batch-actions">
@@ -1387,10 +1405,10 @@
     <section id="allTodosOverlay" class="todo-overlay is-hidden"><div class="panel todo-page">
       <button id="closeAllTodosBtn" type="button">← 返回看板</button>
       <div class="section-title"><h2>全部待办</h2><span id="allTodoStats" class="muted"></span></div>
-      <form id="quickTodoForm" class="todo-add"><select id="quickTodoProject" required><option value="">选择项目</option></select><input id="quickTodoText" required maxlength="300" placeholder="输入待办，按回车添加"><button class="btn-primary">添加</button></form>
+      <form id="quickTodoForm" class="todo-add"><select id="quickTodoProject" required><option value="">选择项目</option></select><input id="quickTodoText" required maxlength="300" placeholder="输入待办，按回车添加"><button type="submit" class="btn-primary">添加</button></form>
       <ul id="allTodoItems" class="todo-list"></ul><button id="toggleAllArchiveBtn" type="button">查看已完成归档（0）</button><ul id="allArchiveItems" class="todo-list is-hidden"></ul>
     </div></section>
-    <section id="todoOverlay" class="todo-overlay is-hidden"><div class="panel todo-page"><button id="closeTodoBtn">← 返回看板</button><h2 id="todoProjectTitle">项目详情</h2><form id="todoForm" class="todo-add"><input id="todoText" required maxlength="300" placeholder="输入接下来要做的事"><button class="btn-primary">添加待办</button></form><ul id="todoItems" class="todo-list"></ul><button id="toggleProjectArchiveBtn" type="button">查看已完成归档（0）</button><ul id="projectArchiveItems" class="todo-list is-hidden"></ul></div></section>
+    <section id="todoOverlay" class="todo-overlay is-hidden"><div class="panel todo-page"><button id="closeTodoBtn" type="button">← 返回看板</button><h2 id="todoProjectTitle">项目详情</h2><form id="todoForm" class="todo-add"><input id="todoText" required maxlength="300" placeholder="输入接下来要做的事"><button type="submit" class="btn-primary">添加待办</button></form><ul id="todoItems" class="todo-list"></ul><button id="toggleProjectArchiveBtn" type="button">查看已完成归档（0）</button><ul id="projectArchiveItems" class="todo-list is-hidden"></ul><section class="reflection-editor" aria-labelledby="reflectionTitle"><div class="section-title"><h3 id="reflectionTitle">复盘与反思</h3><span id="reflectionSaveStatus" class="reflection-save-status"></span></div><textarea id="projectReflection" placeholder="在这里自由记录项目复盘、经验、问题与思考……"></textarea></section></div></section>
   </main>
 
   <script>
@@ -1439,18 +1457,19 @@
       quickContractBtn: document.getElementById("quickContractBtn"),
       projectForm: document.getElementById("projectForm"),
       projectFormTitle: document.getElementById("projectFormTitle"),
+      projectListTitle: document.getElementById("projectListTitle"),
       toggleProjectFormBtn: document.getElementById("toggleProjectFormBtn"),
       resetProjectFormBtn: document.getElementById("resetProjectFormBtn"),
       projectTableBody: document.getElementById("projectTableBody"),
       projectCountText: document.getElementById("projectCountText"),
       projectTypeListFilter: document.getElementById("projectTypeListFilter"),
       toggleAllProjectsBtn: document.getElementById("toggleAllProjectsBtn"),
+      clearProjectSelectionBtn: document.getElementById("clearProjectSelectionBtn"),
       editSelectedProjectBtn: document.getElementById("editSelectedProjectBtn"),
       deleteSelectedProjectBtn: document.getElementById("deleteSelectedProjectBtn"),
       projectBatchField: document.getElementById("projectBatchField"),
       projectBatchValue: document.getElementById("projectBatchValue"),
       saveProjectBatchBtn: document.getElementById("saveProjectBatchBtn"),
-      exportProjectsCsvBtn: document.getElementById("exportProjectsCsvBtn"),
       paymentForm: document.getElementById("paymentForm"),
       paymentFormTitle: document.getElementById("paymentFormTitle"),
       quickUnshippedPaymentsBtn: document.getElementById("quickUnshippedPaymentsBtn"),
@@ -1463,19 +1482,18 @@
       paymentCountText: document.getElementById("paymentCountText"),
       paymentProjectFilter: document.getElementById("paymentProjectFilter"),
       toggleAllPaymentsBtn: document.getElementById("toggleAllPaymentsBtn"),
+      clearPaymentSelectionBtn: document.getElementById("clearPaymentSelectionBtn"),
       editSelectedPaymentBtn: document.getElementById("editSelectedPaymentBtn"),
       deleteSelectedPaymentBtn: document.getElementById("deleteSelectedPaymentBtn"),
       paymentBatchField: document.getElementById("paymentBatchField"),
       paymentBatchValue: document.getElementById("paymentBatchValue"),
       savePaymentBatchBtn: document.getElementById("savePaymentBatchBtn"),
-      exportPaymentsCsvBtn: document.getElementById("exportPaymentsCsvBtn"),
       logForm: document.getElementById("logForm"),
       logFormTitle: document.getElementById("logFormTitle"),
       toggleLogFormBtn: document.getElementById("toggleLogFormBtn"),
       resetLogFormBtn: document.getElementById("resetLogFormBtn"),
       logTableBody: document.getElementById("logTableBody"),
       logCountText: document.getElementById("logCountText"),
-      exportLogsCsvBtn: document.getElementById("exportLogsCsvBtn"),
       projectNoList: document.getElementById("projectNoList")
     };
 
@@ -1510,6 +1528,7 @@
     };
 
     let lastTodoTrigger = null;
+    let reflectionSaveTimer = null;
 
     const PAYMENT_FILTERABLE_COLUMNS = PAYMENT_TABLE_COLUMNS.filter(col => col.key && col.filterable !== false);
     const TONE_SELECT_IDS = ["projectStatus", "riskLevel", "owner", "shipmentStatus", "paymentDocs", "paymentInitiated"];
@@ -1736,6 +1755,71 @@
       return items.filter(item => selectedIdSet.has(item.id));
     }
 
+    function reorderSelectedVisibleItems(allItems, selectedIds, visibleItems, direction) {
+      const selectedIdSet = new Set(selectedIds);
+      const reorderedVisible = [...visibleItems];
+      let moved = false;
+
+      if (direction < 0) {
+        for (let index = 1; index < reorderedVisible.length; index += 1) {
+          if (selectedIdSet.has(reorderedVisible[index].id) && !selectedIdSet.has(reorderedVisible[index - 1].id)) {
+            [reorderedVisible[index - 1], reorderedVisible[index]] = [reorderedVisible[index], reorderedVisible[index - 1]];
+            moved = true;
+          }
+        }
+      } else {
+        for (let index = reorderedVisible.length - 2; index >= 0; index -= 1) {
+          if (selectedIdSet.has(reorderedVisible[index].id) && !selectedIdSet.has(reorderedVisible[index + 1].id)) {
+            [reorderedVisible[index], reorderedVisible[index + 1]] = [reorderedVisible[index + 1], reorderedVisible[index]];
+            moved = true;
+          }
+        }
+      }
+
+      if (!moved) return null;
+      const visibleIdSet = new Set(visibleItems.map(item => item.id));
+      let visibleIndex = 0;
+      return allItems.map(item => visibleIdSet.has(item.id) ? reorderedVisible[visibleIndex++] : item);
+    }
+
+    function restoreRowCheckboxFocus(kind, id) {
+      requestAnimationFrame(() => {
+        const checkbox = [...document.querySelectorAll(`input[data-${kind}-id]`)]
+          .find(input => input.dataset[`${kind}Id`] === id);
+        checkbox?.focus();
+      });
+    }
+
+    function moveSelectedRows(kind, direction, focusId) {
+      if (kind === "project") {
+        const reordered = reorderSelectedVisibleItems(
+          state.data.projects,
+          state.selectedProjectIds,
+          getFilteredProjects(),
+          direction
+        );
+        if (!reordered) return false;
+        state.data.projects = reordered;
+        saveData();
+        renderProjects();
+        restoreRowCheckboxFocus(kind, focusId);
+        return true;
+      }
+
+      const reordered = reorderSelectedVisibleItems(
+        state.data.purchasePayments,
+        state.selectedPaymentIds,
+        getFilteredPayments(),
+        direction
+      );
+      if (!reordered) return false;
+      state.data.purchasePayments = reordered;
+      saveData();
+      renderPayments();
+      restoreRowCheckboxFocus(kind, focusId);
+      return true;
+    }
+
     function renderBatchValueOptions(selectEl, config) {
       selectEl.innerHTML = config
         ? [`<option value="">选择${config.label}</option>`, ...config.values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)].join("")
@@ -1877,6 +1961,7 @@
         { key: "dailyDone", label: "当日已完成内容" },
         { key: "owner", label: "责任方" },
         { key: "supplier", label: "供应商" },
+        { key: "materialGroup", label: "物料组" },
         { key: "projectRequisitionNo", label: "采购申请号" },
         { key: "srmProjectNo", label: "SRM项目号" },
         { key: "lastUpdated", label: "最近更新日期" },
@@ -2124,15 +2209,19 @@
     }
 
     function getFilteredProjects() {
-      const listType = els.projectTypeListFilter.value;
+      const selectedList = els.projectTypeListFilter.value;
+      const archivePrefix = "已完成::";
+      const isArchiveView = selectedList.startsWith(archivePrefix);
+      const listType = isArchiveView ? selectedList.slice(archivePrefix.length) : selectedList;
       const status = state.projectQuickFilter.status;
       const risk = state.projectQuickFilter.risk;
 
       return state.data.projects.filter(project => {
         const matchesType = !listType || project.type === listType;
-        const matchesStatus = !status || project.status === status;
-        const matchesRisk = !risk || project.risk === risk;
-        return matchesType && matchesStatus && matchesRisk;
+        const matchesStatus = isArchiveView || !status || project.status === status;
+        const matchesRisk = isArchiveView || !risk || project.risk === risk;
+        const matchesArchive = isArchiveView ? project.status === "已完成" : project.status !== "已完成";
+        return matchesType && matchesStatus && matchesRisk && matchesArchive;
       });
     }
 
@@ -2177,12 +2266,17 @@
 
     function renderProjects() {
       const projects = getFilteredProjects();
+      const selectedList = els.projectTypeListFilter.value;
+      const archivePrefix = "已完成::";
+      els.projectListTitle.textContent = selectedList.startsWith(archivePrefix)
+        ? `已完成-${selectedList.slice(archivePrefix.length)}项目`
+        : "资开项目列表";
       els.projectCountText.textContent = `共 ${projects.length} 条`;
       const areAllVisibleSelected = projects.length > 0 && projects.every(project => state.selectedProjectIds.includes(project.id));
       els.toggleAllProjectsBtn.textContent = areAllVisibleSelected ? "取消全选" : "全部选中";
 
       if (projects.length === 0) {
-        els.projectTableBody.innerHTML = `<tr><td colspan="10" class="empty-state">暂无项目，请新增或调整筛选条件。</td></tr>`;
+        els.projectTableBody.innerHTML = `<tr><td colspan="11" class="empty-state">暂无项目，请新增或调整筛选条件。</td></tr>`;
         return;
       }
 
@@ -2190,10 +2284,11 @@
         const isSelected = state.selectedProjectIds.includes(project.id);
         return `
         <tr class="${isSelected ? "is-selected-row" : ""}">
-          <td><input class="row-check" type="checkbox" ${isSelected ? "checked" : ""} onchange="selectProjectRow('${project.id}', this.checked)"></td>
+          <td><input class="row-check" type="checkbox" data-project-id="${escapeHtml(project.id)}" title="选中后按↑或↓调整顺序" ${isSelected ? "checked" : ""} onchange="selectProjectRow('${project.id}', this.checked)"></td>
           <td class="cell-strong">${escapeHtml(project.no)}</td>
           <td><button class="project-name-pill" type="button" style="${projectNameStyle(project)}" onclick="selectProjectByName('${project.id}')">${escapeHtml(project.name)}</button></td>
           <td>${escapeHtml(project.type)}</td>
+          <td>${escapeHtml(project.materialGroup)}</td>
           <td>${escapeHtml(project.status)}</td>
           <td><span class="tag ${riskTagClass(project.risk)}">${escapeHtml(project.risk)}</span></td>
           <td>${escapeHtml(project.projectRequisitionNo)}</td>
@@ -2202,7 +2297,7 @@
           <td><span class="tag ${ownerTagClass(project.owner)}">${escapeHtml(project.owner || "资开")}</span></td>
         </tr>
         <tr class="project-detail-row ${isSelected ? "is-selected-row" : ""}">
-          <td colspan="10">
+          <td colspan="11">
             <div class="project-detail-grid">
               <div class="project-detail-block"><strong class="blocker-title">当前卡点</strong><span class="project-detail-text">${escapeHtml(project.blocker)}</span></div>
               <div class="project-detail-block"><strong class="next-action-title">下一步动作</strong><span class="project-detail-text next-action-text">${escapeHtml(project.nextAction)}</span></div>
@@ -2238,7 +2333,7 @@
         const isSelected = state.selectedPaymentIds.includes(payment.id);
         return `
         <tr class="${isSelected ? "is-selected-row" : ""}">
-          <td><input class="row-check" type="checkbox" ${isSelected ? "checked" : ""} onchange="selectPaymentRow('${payment.id}', this.checked)"></td>
+          <td><input class="row-check" type="checkbox" data-payment-id="${escapeHtml(payment.id)}" title="选中后按↑或↓调整顺序" ${isSelected ? "checked" : ""} onchange="selectPaymentRow('${payment.id}', this.checked)"></td>
           <td class="cell-strong">${escapeHtml(payment.projectNo)}</td>
           <td>${escapeHtml(payment.projectName)}</td>
           <td><span class="tag">${escapeHtml(payment.procurementType)}</span></td>
@@ -2374,8 +2469,11 @@
     // 项目表单逻辑
     // =============================
     function getProjectFormData() {
+      const id = document.getElementById("projectId").value || createId();
+      const existingProject = state.data.projects.find(project => project.id === id);
       return {
-        id: document.getElementById("projectId").value || createId(),
+        ...existingProject,
+        id,
         no: document.getElementById("projectNo").value.trim(),
         name: document.getElementById("projectName").value.trim(),
         type: document.getElementById("projectType").value,
@@ -2385,6 +2483,7 @@
         dailyDone: document.getElementById("dailyDone").value.trim(),
         owner: document.getElementById("owner").value.trim(),
         supplier: document.getElementById("supplier").value.trim(),
+        materialGroup: document.getElementById("materialGroup").value.trim(),
         projectRequisitionNo: document.getElementById("projectRequisitionNo").value.trim(),
         srmProjectNo: document.getElementById("srmProjectNo").value.trim(),
         lastUpdated: todayString(),
@@ -2402,6 +2501,7 @@
         dailyDone: formProject.dailyDone,
         owner: formProject.owner,
         supplier: formProject.supplier,
+        materialGroup: formProject.materialGroup,
         projectRequisitionNo: formProject.projectRequisitionNo,
         srmProjectNo: formProject.srmProjectNo,
         lastUpdated: todayString(),
@@ -2420,6 +2520,7 @@
         { key: "dailyDone", label: "当日已完成内容" },
         { key: "owner", label: "责任方" },
         { key: "supplier", label: "供应商" },
+        { key: "materialGroup", label: "物料组" },
         { key: "projectRequisitionNo", label: "采购申请号" },
         { key: "srmProjectNo", label: "SRM项目号" },
         { key: "lastUpdated", label: "最近更新日期" },
@@ -2453,6 +2554,7 @@
       document.getElementById("dailyDone").value = project.dailyDone || "";
       document.getElementById("owner").value = ["资开", "技术", "供应商"].includes(project.owner) ? project.owner : "资开";
       document.getElementById("supplier").value = project.supplier || "";
+      document.getElementById("materialGroup").value = project.materialGroup || "";
       document.getElementById("projectRequisitionNo").value = project.projectRequisitionNo || "";
       document.getElementById("srmProjectNo").value = project.srmProjectNo || "";
       document.getElementById("lastUpdated").value = project.lastUpdated || todayString();
@@ -2989,6 +3091,8 @@
       const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);
       if(!project)return;
       document.getElementById("todoProjectTitle").textContent=project.name;
+      document.getElementById("projectReflection").value=project.reflection||"";
+      document.getElementById("reflectionSaveStatus").textContent="";
       const today=todayString(),todos=ensureProjectTodos(project);
       const active=todos.filter(todo=>!todo.completed||localDateString(todo.completedAt)===today);
       const archived=todos.filter(todo=>todo.completed&&localDateString(todo.completedAt)!==today);
@@ -3112,11 +3216,12 @@
     }
 
     function exportProjectsCsv() {
-      const headers = ["项目编号", "项目名称", "项目类型", "当前状态", "当前卡点", "下一步动作", "当日已完成内容", "责任方", "供应商", "采购申请号", "SRM项目号", "最近更新日期", "风险等级"];
+      const headers = ["项目编号", "项目名称", "项目类型", "物料组", "当前状态", "当前卡点", "下一步动作", "当日已完成内容", "责任方", "供应商", "采购申请号", "SRM项目号", "最近更新日期", "风险等级"];
       const rows = state.data.projects.map(project => ({
         "项目编号": project.no,
         "项目名称": project.name,
         "项目类型": project.type,
+        "物料组": project.materialGroup,
         "当前状态": project.status,
         "当前卡点": project.blocker,
         "下一步动作": project.nextAction,
@@ -3189,6 +3294,15 @@
     document.getElementById("quickTodoForm").addEventListener("submit",event=>{event.preventDefault();const project=state.data.projects.find(item=>item.id===document.getElementById("quickTodoProject").value);const input=document.getElementById("quickTodoText");const text=input.value.trim();if(!project||!text)return;ensureProjectTodos(project).push({id:createId(),text,completed:false,completedAt:""});project.lastUpdated=todayString();input.value="";saveData();renderAllTodoPage();input.focus()});
     document.getElementById("closeTodoBtn").addEventListener("click",()=>{document.getElementById("todoOverlay").classList.add("is-hidden");state.activeTodoProjectId=null;if(state.todoReturnView==="allTodos"){document.getElementById("allTodosOverlay").classList.remove("is-hidden");renderAllTodoPage();requestAnimationFrame(()=>lastTodoTrigger?.focus())}else{document.body.classList.remove("modal-open");renderAll();requestAnimationFrame(()=>lastTodoTrigger?.focus())}});
     document.getElementById("todoForm").addEventListener("submit",event=>{event.preventDefault();const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const input=document.getElementById("todoText");const text=input.value.trim();if(!project||!text)return;ensureProjectTodos(project).push({id:createId(),text,completed:false,completedAt:""});input.value="";project.lastUpdated=todayString();saveData();renderTodoPage();input.focus()});
+    document.getElementById("projectReflection").addEventListener("input",event=>{
+      const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);
+      if(!project)return;
+      project.reflection=event.target.value;
+      const status=document.getElementById("reflectionSaveStatus");
+      status.textContent="正在保存…";
+      clearTimeout(reflectionSaveTimer);
+      reflectionSaveTimer=setTimeout(()=>{saveData();status.textContent="已自动保存";},300);
+    });
     bindFileImport(els.importJsonBtn, els.importJsonFile, importJsonFile);
     bindFileImport(els.importBaselineJsonBtn, els.baselineJsonFile, importBaselineJsonFile);
     bindFileImport(els.importTodayJsonBtn, els.todayJsonFile, importTodayJsonAndCompare);
@@ -3218,11 +3332,15 @@
 
     els.projectTypeListFilter.addEventListener("change", renderProjects);
     els.toggleAllProjectsBtn.addEventListener("click", toggleAllVisibleProjects);
+    els.clearProjectSelectionBtn.addEventListener("click", () => {
+      state.selectedProjectIds = [];
+      resetProjectForm();
+      renderProjects();
+    });
     els.deleteSelectedProjectBtn.addEventListener("click", deleteSelectedProject);
     els.projectBatchField.addEventListener("change", updateProjectBatchValueOptions);
     els.saveProjectBatchBtn.addEventListener("click", saveProjectBatch);
     els.resetLogFormBtn.addEventListener("click", resetLogForm);
-    els.exportProjectsCsvBtn.addEventListener("click", exportProjectsCsv);
     els.paymentProjectFilter.addEventListener("change", () => {
       state.paymentQuickFilter = { shipmentStatus: "", paymentDocs: "", paymentInitiated: "" };
       resetPaymentColumnFilters();
@@ -3233,11 +3351,14 @@
     els.quickUninitiatedPaymentsBtn.addEventListener("click", () => applyPaymentQuickFilter({ paymentInitiated: "否" }));
     els.resetPaymentQuickFilterBtn.addEventListener("click", () => applyPaymentQuickFilter());
     els.toggleAllPaymentsBtn.addEventListener("click", toggleAllVisiblePayments);
+    els.clearPaymentSelectionBtn.addEventListener("click", () => {
+      state.selectedPaymentIds = [];
+      resetPaymentForm();
+      renderPayments();
+    });
     els.deleteSelectedPaymentBtn.addEventListener("click", deleteSelectedPayment);
     els.paymentBatchField.addEventListener("change", updatePaymentBatchValueOptions);
     els.savePaymentBatchBtn.addEventListener("click", savePaymentBatch);
-    els.exportPaymentsCsvBtn.addEventListener("click", exportPaymentsCsv);
-    els.exportLogsCsvBtn.addEventListener("click", exportLogsCsv);
     window.addEventListener("resize", syncProjectTableHeight);
 
     document.addEventListener("keydown", event => {
@@ -3284,6 +3405,33 @@
 
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") closePaymentColumnFilterMenu();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+      if (event.target.matches('input:not([type="checkbox"]), textarea, select')) return;
+
+      const projectCheckbox = event.target.closest("input[data-project-id]");
+      const paymentCheckbox = event.target.closest("input[data-payment-id]");
+      const visibleProjects = getFilteredProjects();
+      const visiblePayments = getFilteredPayments();
+      const hasSelectedProjects = visibleProjects.some(item => state.selectedProjectIds.includes(item.id));
+      const hasSelectedPayments = visiblePayments.some(item => state.selectedPaymentIds.includes(item.id));
+
+      let kind = projectCheckbox ? "project" : paymentCheckbox ? "payment" : "";
+      if (!kind && hasSelectedProjects !== hasSelectedPayments) {
+        kind = hasSelectedProjects ? "project" : "payment";
+      }
+      if (!kind) return;
+
+      const selectedIds = kind === "project" ? state.selectedProjectIds : state.selectedPaymentIds;
+      const visibleItems = kind === "project" ? visibleProjects : visiblePayments;
+      const focusId = projectCheckbox?.dataset.projectId
+        || paymentCheckbox?.dataset.paymentId
+        || visibleItems.find(item => selectedIds.includes(item.id))?.id;
+      if (moveSelectedRows(kind, event.key === "ArrowUp" ? -1 : 1, focusId)) {
+        event.preventDefault();
+      }
     });
 
     TONE_SELECT_IDS.forEach(id => {
