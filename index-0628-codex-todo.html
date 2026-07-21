@@ -1177,11 +1177,11 @@
                 <th>编号</th>
                 <th>项目名称</th>
                 <th>类型</th>
-                <th>物料组</th>
                 <th>状态</th>
                 <th>风险</th>
                 <th>采购申请号</th>
                 <th>SRM项目号</th>
+                <th>物料组</th>
                 <th>供应商</th>
                 <th>责任方</th>
               </tr>
@@ -2288,11 +2288,11 @@
           <td class="cell-strong">${escapeHtml(project.no)}</td>
           <td><button class="project-name-pill" type="button" style="${projectNameStyle(project)}" onclick="selectProjectByName('${project.id}')">${escapeHtml(project.name)}</button></td>
           <td>${escapeHtml(project.type)}</td>
-          <td>${escapeHtml(project.materialGroup)}</td>
           <td>${escapeHtml(project.status)}</td>
           <td><span class="tag ${riskTagClass(project.risk)}">${escapeHtml(project.risk)}</span></td>
           <td>${escapeHtml(project.projectRequisitionNo)}</td>
           <td>${escapeHtml(project.srmProjectNo)}</td>
+          <td>${escapeHtml(project.materialGroup)}</td>
           <td>${escapeHtml(project.supplier)}</td>
           <td><span class="tag ${ownerTagClass(project.owner)}">${escapeHtml(project.owner || "资开")}</span></td>
         </tr>
