@@ -967,6 +967,15 @@
     .archive-todo-row { grid-template-columns: auto max-content minmax(0, 1fr) auto auto; }
     .todo-project { white-space: nowrap; }
     .all-todo-row .todo-date,.archive-todo-row .todo-date { margin-left: 0; align-self: center; text-align: right; white-space: nowrap; }
+    .todo-project-groups { display: grid; gap: 18px; margin: 16px 0; }
+    .todo-project-group { padding: 14px; border: 3px solid var(--line); background: #fff7d6; box-shadow: var(--shadow-small); }
+    .todo-project-group-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    summary.todo-project-group-header { cursor: pointer; font-weight: 800; }
+    .todo-project-group .todo-list { margin-top: 12px; }
+    .grouped-active-row { grid-template-columns: auto minmax(0, 1fr) auto; box-shadow: none; }
+    .grouped-archive-row { grid-template-columns: minmax(0, 1fr) auto; box-shadow: none; }
+    .todo-time-group { margin-top: 14px; }
+    .todo-time-node { display: inline-block; margin-bottom: 8px; padding: 5px 9px; border: 2px solid var(--line); background: #fff; font-weight: 800; }
     .reflection-editor { margin-top: 28px; padding-top: 22px; border-top: 4px solid var(--line); }
     .reflection-editor textarea { width: 100%; min-height: 280px; resize: vertical; line-height: 1.7; }
     .reflection-save-status { font-size: 13px; color: var(--muted); }
@@ -1406,7 +1415,7 @@
       <button id="closeAllTodosBtn" type="button">← 返回看板</button>
       <div class="section-title"><h2>全部待办</h2><span id="allTodoStats" class="muted"></span></div>
       <form id="quickTodoForm" class="todo-add"><select id="quickTodoProject" required><option value="">选择项目</option></select><input id="quickTodoText" required maxlength="300" placeholder="输入待办，按回车添加"><button type="submit" class="btn-primary">添加</button></form>
-      <ul id="allTodoItems" class="todo-list"></ul><button id="toggleAllArchiveBtn" type="button">查看已完成归档（0）</button><ul id="allArchiveItems" class="todo-list is-hidden"></ul>
+      <div id="allTodoItems" class="todo-project-groups"></div><button id="toggleAllArchiveBtn" type="button">查看已完成归档（0）</button><div id="allArchiveItems" class="todo-project-groups is-hidden"></div>
     </div></section>
     <section id="todoOverlay" class="todo-overlay is-hidden"><div class="panel todo-page"><button id="closeTodoBtn" type="button">← 返回看板</button><h2 id="todoProjectTitle">项目详情</h2><form id="todoForm" class="todo-add"><input id="todoText" required maxlength="300" placeholder="输入接下来要做的事"><button type="submit" class="btn-primary">添加待办</button></form><ul id="todoItems" class="todo-list"></ul><button id="toggleProjectArchiveBtn" type="button">查看已完成归档（0）</button><ul id="projectArchiveItems" class="todo-list is-hidden"></ul><section class="reflection-editor" aria-labelledby="reflectionTitle"><div class="section-title"><h3 id="reflectionTitle">复盘与反思</h3><span id="reflectionSaveStatus" class="reflection-save-status"></span></div><textarea id="projectReflection" placeholder="在这里自由记录项目复盘、经验、问题与思考……"></textarea></section></div></section>
   </main>
@@ -3105,17 +3114,43 @@
     window.restoreProjectTodo=function(id){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);const todo=ensureProjectTodos(project).find(item=>item.id===id);if(!todo)return;todo.completed=false;todo.completedAt="";saveData();renderTodoPage();renderTodayTodos()}
     window.deleteProjectTodo=function(id){const project=state.data.projects.find(item=>item.id===state.activeTodoProjectId);if(!project||!confirm("确定删除这条待办？"))return;project.todos=ensureProjectTodos(project).filter(item=>item.id!==id);saveData();renderTodoPage();renderTodayTodos()}
 
+    function groupTodoRowsByProject(rows){
+      const groups=new Map();
+      rows.forEach(row=>{
+        if(!groups.has(row.project.id))groups.set(row.project.id,{project:row.project,rows:[]});
+        groups.get(row.project.id).rows.push(row);
+      });
+      return [...groups.values()];
+    }
+
     function renderAllTodoPage(){
+      const openArchiveProjectIds=new Set([...document.querySelectorAll("#allArchiveItems details[open][data-project-id]")].map(item=>item.dataset.projectId));
       const projectSelect=document.getElementById("quickTodoProject"),selected=projectSelect.value;
       projectSelect.innerHTML='<option value="">选择项目</option>'+state.data.projects.map(project=>`<option value="${project.id}">${escapeHtml(project.name)}</option>`).join("");
       if(state.data.projects.some(project=>project.id===selected))projectSelect.value=selected;
       const today=todayString(),rows=state.data.projects.flatMap(project=>ensureProjectTodos(project).map(todo=>({project,todo})));
-      const active=rows.filter(row=>!row.todo.completed||localDateString(row.todo.completedAt)===today).sort((a,b)=>Number(a.todo.completed)-Number(b.todo.completed));
+      const active=rows.filter(row=>!row.todo.completed||localDateString(row.todo.completedAt)===today);
       const archived=rows.filter(row=>row.todo.completed&&localDateString(row.todo.completedAt)!==today);
+      const riskPriority={高:3,中:2,低:1};
+      const sortGroupsByRisk=(groupA,groupB)=>(riskPriority[groupB.project.risk]||0)-(riskPriority[groupA.project.risk]||0);
+      const activeGroups=groupTodoRowsByProject(active).sort(sortGroupsByRisk);
+      const archiveGroups=groupTodoRowsByProject(archived).sort(sortGroupsByRisk);
       document.getElementById("allTodoStats").textContent=`未完成 ${active.filter(row=>!row.todo.completed).length} 项｜今日完成 ${active.filter(row=>row.todo.completed).length} 项`;
-      document.getElementById("allTodoItems").innerHTML=active.length?active.map(row=>`<li class="todo-row all-todo-row ${row.todo.completed?"done":""}"><input class="row-check" type="checkbox" ${row.todo.completed?"checked":""} onchange="toggleAllTodo('${row.project.id}','${row.todo.id}',this.checked)"><button type="button" class="btn-purple todo-project" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button><span class="todo-body">${escapeHtml(row.todo.text)}</span>${row.todo.completedAt?`<small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small>`:""}</li>`).join(""):'<li class="empty-state">暂无待办，可在上方快速添加。</li>';
+      document.getElementById("allTodoItems").innerHTML=activeGroups.length?activeGroups.map(group=>{
+        const projectRows=[...group.rows].sort((a,b)=>Number(a.todo.completed)-Number(b.todo.completed));
+        return `<section class="todo-project-group" data-project-id="${escapeHtml(group.project.id)}"><div class="todo-project-group-header"><button type="button" class="project-name-pill" style="${projectNameStyle(group.project)}" onclick="openProjectFromAllTodos('${group.project.id}')">${escapeHtml(group.project.name)}</button></div><ul class="todo-list">${projectRows.map(row=>`<li class="todo-row grouped-active-row ${row.todo.completed?"done":""}"><input class="row-check" type="checkbox" ${row.todo.completed?"checked":""} onchange="toggleAllTodo('${row.project.id}','${row.todo.id}',this.checked)"><span class="todo-label">${escapeHtml(row.todo.text)}</span>${row.todo.completedAt?`<small class="todo-date">今日完成</small>`:""}</li>`).join("")}</ul></section>`;
+      }).join(""):'<div class="empty-state">暂无待办，可在上方快速添加。</div>';
       document.getElementById("toggleAllArchiveBtn").textContent=`查看已完成归档（${archived.length}）`;
-      document.getElementById("allArchiveItems").innerHTML=archived.length?archived.map(row=>`<li class="todo-row archive-todo-row done"><span></span><button type="button" class="btn-purple todo-project" style="${projectNameStyle(row.project)}" onclick="openProjectFromAllTodos('${row.project.id}')">${escapeHtml(row.project.name)}</button><span class="todo-body">${escapeHtml(row.todo.text)}</span><small class="todo-date">完成于 ${escapeHtml(localDateString(row.todo.completedAt))}</small><div class="actions"><button type="button" onclick="restoreAllTodo('${row.project.id}','${row.todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteArchivedTodo('${row.project.id}','${row.todo.id}')">删除</button></div></li>`).join(""):'<li class="empty-state">暂无归档事项。</li>';
+      document.getElementById("allArchiveItems").innerHTML=archiveGroups.length?archiveGroups.map(group=>{
+        const rowsByDate=new Map();
+        group.rows.forEach(row=>{
+          const date=localDateString(row.todo.completedAt)||"日期未知";
+          if(!rowsByDate.has(date))rowsByDate.set(date,[]);
+          rowsByDate.get(date).push(row);
+        });
+        const dateGroups=[...rowsByDate.entries()].sort(([dateA],[dateB])=>dateB.localeCompare(dateA));
+        return `<details class="todo-project-group" data-project-id="${escapeHtml(group.project.id)}"${openArchiveProjectIds.has(group.project.id)?" open":""}><summary class="todo-project-group-header"><button type="button" class="project-name-pill" style="${projectNameStyle(group.project)}" onclick="event.preventDefault();event.stopPropagation();openProjectFromAllTodos('${group.project.id}')">${escapeHtml(group.project.name)}</button><span class="muted">共 ${group.rows.length} 条归档</span></summary>${dateGroups.map(([date,dateRows])=>`<div class="todo-time-group"><div class="todo-time-node">完成于 ${escapeHtml(date)}</div><ul class="todo-list">${dateRows.map(row=>`<li class="todo-row grouped-archive-row done"><span class="todo-label">${escapeHtml(row.todo.text)}</span><div class="actions"><button type="button" onclick="restoreAllTodo('${row.project.id}','${row.todo.id}')">恢复</button><button type="button" class="btn-danger" onclick="deleteArchivedTodo('${row.project.id}','${row.todo.id}')">删除</button></div></li>`).join("")}</ul></div>`).join("")}</details>`;
+      }).join(""):'<div class="empty-state">暂无归档事项。</div>';
     }
     window.toggleAllTodo=function(projectId,todoId,completed){const project=state.data.projects.find(item=>item.id===projectId);const todo=ensureProjectTodos(project).find(item=>item.id===todoId);if(!todo)return;todo.completed=completed;todo.completedAt=completed?new Date().toISOString():"";project.lastUpdated=todayString();saveData();renderAllTodoPage();renderTodayTodos()}
     window.restoreAllTodo=function(projectId,todoId){const project=state.data.projects.find(item=>item.id===projectId);const todo=ensureProjectTodos(project).find(item=>item.id===todoId);if(!todo)return;todo.completed=false;todo.completedAt="";saveData();renderAllTodoPage();renderTodayTodos()}
